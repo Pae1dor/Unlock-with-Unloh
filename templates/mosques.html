@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}ค้นหามัสยิด — {{ app_name }}{% endblock %}
+{% block page_title %}ค้นหามัสยิด{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% block content %}
+<div id="map"></div>
+<p class="map-note" id="geo-note">เปิดสิทธิ์ตำแหน่งที่ตั้งเพื่อดูระยะทางจากคุณถึงแต่ละมัสยิด</p>
+
+<div class="section" id="mosque-list">
+  {% for mosque in mosques %}
+  <div class="row" data-lat="{{ mosque.lat }}" data-lng="{{ mosque.lng }}" data-id="{{ mosque.id }}">
+    <span class="row__num"><svg class="ico"><use href="#i-mosque"></use></svg></span>
+    <span class="row__body">
+      <span class="row__title">{{ mosque.name }}</span>
+      <span class="row__sub">{{ mosque.address }}</span>
+      {% if mosque.phone %}<span class="row__sub">โทร. {{ mosque.phone }}</span>{% endif %}
+    </span>
+    <span class="dist" data-dist>—</span>
+  </div>
+  {% else %}
+  <p class="empty">ยังไม่มีข้อมูลมัสยิด — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/static/js/map.js"></script>
+{% endblock %}

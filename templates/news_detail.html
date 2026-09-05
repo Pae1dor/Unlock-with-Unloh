@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set back_url = "/news" %}
+{% block title %}{{ item.title }} — {{ app_name }}{% endblock %}
+{% block page_title %}ข่าวสาร{% endblock %}
+
+{% block content %}
+<div class="news-hero" style="background:{{ item.image_color }}">
+  <svg class="ico"><use href="#i-newspaper"></use></svg>
+</div>
+
+<article class="article">
+  <span class="badge">{{ news_category_labels.get(item.category, 'ข่าวสาร') }}</span>
+  <h1 class="article__title">{{ item.title }}</h1>
+  <p class="card__meta">{{ item.published_at|thai_day }}</p>
+  <div class="article__body" style="margin-top:14px">
+    {% for para in item.content.split('\n\n') %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% include "_icons.html" %}
+
+  <div class="phone">
+    {% block header %}
+    <header class="topbar">
+      <a class="topbar__btn" href="{{ back_url|default('/') }}" aria-label="ย้อนกลับ">
+        <svg class="ico"><use href="#i-back"></use></svg>
+      </a>
+      <h1 class="topbar__title">{% block page_title %}{{ app_name }}{% endblock %}</h1>
+      <button class="topbar__btn" type="button" aria-label="การแจ้งเตือน">
+        <svg class="ico"><use href="#i-bell"></use></svg>
+      </button>
+    </header>
+    {% endblock %}
+
+    <main class="screen">
+      {% block content %}{% endblock %}
+    </main>
+
+    <nav class="tabbar" aria-label="เมนูหลัก">
+      <a class="tab {% if active == 'home' %}is-active{% endif %}" href="/">
+        <svg class="ico"><use href="#i-home"></use></svg>
+        <span>หน้าแรก</span>
+      </a>
+      <a class="tab {% if active == 'community' %}is-active{% endif %}" href="/community">
+        <svg class="ico"><use href="#i-users"></use></svg>
+        <span>ชุมชน</span>
+      </a>
+      <a class="tab tab--center" href="/prayer-times" aria-label="เวลาละหมาด">
+        <span class="tab__fab">
+          <svg class="ico"><use href="#i-mosque"></use></svg>
+        </span>
+      </a>
+      <a class="tab {% if active == 'news' %}is-active{% endif %}" href="/news">
+        <svg class="ico"><use href="#i-newspaper"></use></svg>
+        <span>ข่าวสาร</span>
+      </a>
+      <a class="tab {% if active == 'profile' %}is-active{% endif %}" href="{% if user %}/profile{% else %}/login{% endif %}">
+        <svg class="ico"><use href="#i-user"></use></svg>
+        <span>บัญชี</span>
+      </a>
+    </nav>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

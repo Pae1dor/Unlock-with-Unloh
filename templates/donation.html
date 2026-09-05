@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}บริจาค — {{ app_name }}{% endblock %}
+{% block page_title %}บริจาค{% endblock %}
+
+{% block content %}
+<div class="section">
+  {% if user %}
+  <a class="link-row" href="/donation/history">
+    <svg class="ico"><use href="#i-clock"></use></svg>
+    <span>ประวัติการบริจาคของฉัน</span>
+  </a>
+  {% endif %}
+
+  {% for campaign in campaigns %}
+  <div class="card">
+    <h2 class="card__title">{{ campaign.name }}</h2>
+    <p class="card__text">{{ campaign.description }}</p>
+    {% if campaign.qr_image_path %}
+    <div class="qr-box" style="margin-top:12px">
+      <img src="{{ campaign.qr_image_path }}" alt="QR สำหรับบริจาค {{ campaign.name }}" width="190" height="190">
+      <p class="card__meta" style="margin-top:6px">สแกนเพื่อดูข้อมูลบัญชีรับบริจาค</p>
+    </div>
+    {% endif %}
+    <a class="btn" href="/donation/{{ campaign.slug }}" style="margin-top:12px">ดูรายละเอียด</a>
+  </div>
+  {% else %}
+  <p class="empty">ยังไม่มีโครงการบริจาค — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
+  {% endfor %}
+</div>
+{% endblock %}

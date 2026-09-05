@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set back_url = "/login" %}
+{% block title %}สมัครสมาชิก — {{ app_name }}{% endblock %}
+{% block page_title %}สมัครสมาชิก{% endblock %}
+
+{% block content %}
+<div class="brandmark">
+  <div class="brandmark__ico"><svg class="ico"><use href="#i-mosque"></use></svg></div>
+  <div class="brandmark__name">{{ app_name }}</div>
+  <div class="brandmark__sub">สร้างบัญชีเพื่อร่วมเป็นส่วนหนึ่งของชุมชน</div>
+</div>
+
+{% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+
+<form class="form" method="post" action="/register">
+  <div class="field">
+    <label for="full_name">ชื่อ-นามสกุล</label>
+    <input type="text" id="full_name" name="full_name" required maxlength="160" value="{{ form.get('full_name', '') }}">
+  </div>
+  <div class="field">
+    <label for="email">อีเมล</label>
+    <input type="email" id="email" name="email" required autocomplete="email" value="{{ form.get('email', '') }}">
+  </div>
+  <div class="field">
+    <label for="password">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+    <input type="password" id="password" name="password" required minlength="6" autocomplete="new-password">
+  </div>
+  <div class="field">
+    <label for="confirm_password">ยืนยันรหัสผ่าน</label>
+    <input type="password" id="confirm_password" name="confirm_password" required minlength="6" autocomplete="new-password">
+  </div>
+  <button class="btn" type="submit">สมัครสมาชิก</button>
+  <p class="form-foot">มีบัญชีอยู่แล้ว? <a href="/login">เข้าสู่ระบบ</a></p>
+</form>
+{% endblock %}

@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd \\\"/c/Users/hp/OneDrive/Desktop/Projectปัญยาอ่อน/Unlock with Unloh\\\" && rm -f dev.db && DATABASE_URL=\\\"sqlite:///./dev.db\\\" .venv/Scripts/python -m app.seed\",\"timeout\":60000,\"description...",
+  "error": "Exit code 1\nTraceback (most recent call last):\r\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\r\n  File \"<frozen runpy>\", line 88, in _run_code\r\n  File \"C:\\Users\\hp\\OneDrive\\Desktop\\Project�ѭ����͹\\Unlock with Unloh\\app\\seed.py\", line 320, in <module>\r\n    seed()\r\n  File \"C:\\Users\\hp\\OneDrive\\Desktop\\Project�ѭ����͹\\Unlock with Unloh\\app\\seed.py\", line 299, in seed\r\n    qr_path = _generate_qr(item[\"slug\"], payload)\r\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\hp\\O...",
+  "timestamp": "2026-09-05T15:44:41.279Z",
+  "retry_count": 1
+}

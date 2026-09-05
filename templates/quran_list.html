@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}อัลกุรอาน — {{ app_name }}{% endblock %}
+{% block page_title %}อัลกุรอาน{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="notice notice--error">{{ error }}</div>
+{% else %}
+<div class="searchbox">
+  <svg class="ico"><use href="#i-search"></use></svg>
+  <input type="search" id="surah-search" placeholder="ค้นหาซูเราะฮ์..." autocomplete="off">
+</div>
+
+<div class="section" id="surah-list">
+  {% for s in surahs %}
+  <a class="row" href="/quran/{{ s.number }}"
+     data-search="{{ s.number }} {{ s.name_th }} {{ s.name_en }} {{ s.meaning_en }}">
+    <span class="row__num">{{ s.number }}</span>
+    <span class="row__body">
+      <span class="row__title">{{ s.number }}. {{ s.name_th }}</span>
+      <span class="row__sub">{{ s.name_en }} · {{ s.ayah_count }} อายะฮ์ · {{ s.revelation_th }}</span>
+    </span>
+    <span class="row__ar">{{ s.name_ar }}</span>
+  </a>
+  {% endfor %}
+  <p class="empty" id="no-results" hidden>ไม่พบซูเราะฮ์ที่ค้นหา</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/quran-search.js"></script>
+{% endblock %}

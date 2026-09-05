@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}บัญชี — {{ app_name }}{% endblock %}
+
+{% block header %}
+<header class="profile-head">
+  <div class="avatar avatar--lg">{{ user.initial }}</div>
+  <div style="font-size:18px;font-weight:700">{{ user.full_name }}</div>
+  <div style="font-size:13px;opacity:.85">{{ user.email }}</div>
+</header>
+{% endblock %}
+
+{% block content %}
+{% if saved %}<div class="notice notice--ok">บันทึกข้อมูลเรียบร้อยแล้ว</div>{% endif %}
+
+<div class="profile-stats">
+  <div><strong>{{ post_count }}</strong><span>กระทู้</span></div>
+  <div><strong>{{ donation_count }}</strong><span>การบริจาค</span></div>
+</div>
+
+<div class="section">
+  <a class="link-row" href="/donation/history">
+    <svg class="ico"><use href="#i-heart"></use></svg>
+    <span>ประวัติการบริจาค</span>
+  </a>
+  <a class="link-row" href="/community">
+    <svg class="ico"><use href="#i-users"></use></svg>
+    <span>ชุมชน</span>
+  </a>
+</div>
+
+<div class="section">
+  <div class="card">
+    <h2 class="card__title">แก้ไขข้อมูลส่วนตัว</h2>
+    <form method="post" action="/profile" style="margin-top:10px">
+      <div class="field">
+        <label for="full_name">ชื่อ-นามสกุล</label>
+        <input type="text" id="full_name" name="full_name" required maxlength="160" value="{{ user.full_name }}">
+      </div>
+      <div class="field">
+        <label for="city">เมือง (ใช้คำนวณเวลาละหมาด)</label>
+        <input type="text" id="city" name="city" maxlength="120" value="{{ user.city }}">
+      </div>
+      <div class="field">
+        <label for="phone">เบอร์โทรศัพท์</label>
+        <input type="tel" id="phone" name="phone" maxlength="40" value="{{ user.phone or '' }}">
+      </div>
+      <button class="btn" type="submit">บันทึกข้อมูล</button>
+    </form>
+  </div>
+
+  <a class="btn btn--danger" href="/logout">ออกจากระบบ</a>
+</div>
+{% endblock %}

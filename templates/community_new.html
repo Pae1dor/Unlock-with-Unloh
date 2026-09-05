@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set back_url = "/community" %}
+{% block title %}สร้างกระทู้ — {{ app_name }}{% endblock %}
+{% block page_title %}สร้างกระทู้{% endblock %}
+
+{% block content %}
+{% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+
+<form class="form" method="post" action="/community/new">
+  <div class="field">
+    <label for="title">หัวข้อกระทู้</label>
+    <input type="text" id="title" name="title" required maxlength="255" value="{{ form.get('title', '') }}">
+  </div>
+  <div class="field">
+    <label for="category">หมวดหมู่</label>
+    <select id="category" name="category">
+      {% for key, label in forum_categories %}
+      <option value="{{ key }}" {% if form.get('category') == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="content">เนื้อหา</label>
+    <textarea id="content" name="content" required placeholder="เขียนสิ่งที่อยากแบ่งปันกับพี่น้อง...">{{ form.get('content', '') }}</textarea>
+  </div>
+  <button class="btn" type="submit">โพสต์กระทู้</button>
+</form>
+{% endblock %}

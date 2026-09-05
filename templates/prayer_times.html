@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}เวลาละหมาด — {{ app_name }}{% endblock %}
+{% block page_title %}เวลาละหมาด{% endblock %}
+
+{% block content %}
+{% if prayer.ok %}
+{% set next_item = prayer.timings | selectattr('key', 'equalto', prayer.next) | first %}
+<div class="prayer-hero">
+  <div class="prayer-hero__next">ละหมาดถัดไป · {{ next_item.name_th if next_item else '—' }}</div>
+  <div class="prayer-hero__time">{{ next_item.time if next_item else '--:--' }}</div>
+  <div class="prayer-hero__meta">{{ prayer.gregorian }}</div>
+  {% if prayer.hijri %}<div class="prayer-hero__meta">{{ prayer.hijri }}</div>{% endif %}
+</div>
+{% else %}
+<div class="notice notice--error">{{ prayer.error }}</div>
+{% endif %}
+
+<div class="section">
+  <form class="inline-form" method="post" action="/set-city">
+    <input type="text" name="city" value="{{ city }}" placeholder="ชื่อเมือง เช่น ปัตตานี" aria-label="เมือง">
+    <input type="hidden" name="next" value="/prayer-times">
+    <button class="btn" type="submit">เปลี่ยน</button>
+  </form>
+  <p class="map-note" style="padding-left:0">พิมพ์ชื่อเมืองได้ทั้งภาษาไทยและอังกฤษ (เช่น ปัตตานี, Pattani, เชียงใหม่)</p>
+</div>
+
+{% if prayer.ok %}
+<div class="section">
+  {% for item in prayer.timings %}
+  <div class="prayer-row {% if item.key == prayer.current %}is-now{% endif %}">
+    <svg class="ico"><use href="#i-clock"></use></svg>
+    <div class="prayer-row__name">
+      {{ item.name_th }}
+      <span class="prayer-row__sub">{{ item.key }}</span>
+    </div>
+    <div class="prayer-row__time">{{ item.time }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="section">
+  <div class="toggle-row">
+    <svg class="ico" style="color:var(--green)"><use href="#i-bell"></use></svg>
+    <div class="toggle-row__label">
+      แจ้งเตือนละหมาด
+      <span class="prayer-row__sub" id="toggle-status">
+        {% if not user %}เข้าสู่ระบบเพื่อบันทึกการตั้งค่า{% else %}บันทึกไว้ในบัญชีของคุณ{% endif %}
+      </span>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="prayer-toggle"
+             {% if notifications_enabled %}checked{% endif %}
+             {% if not user %}disabled{% endif %}>
+      <span class="switch__track"></span>
+    </label>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/prayer.js"></script>
+{% endblock %}

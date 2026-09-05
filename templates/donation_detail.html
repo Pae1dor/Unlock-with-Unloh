@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set back_url = "/donation" %}
+{% block title %}{{ campaign.name }} — {{ app_name }}{% endblock %}
+{% block page_title %}บริจาค{% endblock %}
+
+{% block content %}
+{% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+
+<div class="section">
+  <div class="card">
+    <h1 class="card__title" style="font-size:17px">{{ campaign.name }}</h1>
+    <p class="card__text">{{ campaign.description }}</p>
+
+    {% if campaign.qr_image_path %}
+    <div class="qr-box" style="margin-top:14px">
+      <img src="{{ campaign.qr_image_path }}" alt="QR สำหรับบริจาค {{ campaign.name }}" width="190" height="190">
+    </div>
+    {% endif %}
+
+    <div style="margin-top:14px">
+      <div class="bank-line"><span>ธนาคาร</span><span>{{ campaign.bank_name }}</span></div>
+      <div class="bank-line"><span>เลขที่บัญชี</span><span>{{ campaign.bank_account_number }}</span></div>
+      <div class="bank-line"><span>ชื่อบัญชี</span><span>{{ campaign.bank_account_name }}</span></div>
+    </div>
+  </div>
+
+  {% if user %}
+  <div class="card">
+    <h2 class="card__title">แจ้งยืนยันการโอน</h2>
+    <p class="card__meta">เป็นการแจ้งด้วยตนเอง ระบบไม่ได้ตรวจสอบยอดกับธนาคาร</p>
+    <form method="post" action="/donation/{{ campaign.slug }}/report" style="margin-top:12px">
+      <div class="field">
+        <label for="amount">จำนวนเงิน (บาท)</label>
+        <input type="text" inputmode="decimal" id="amount" name="amount" required placeholder="เช่น 500">
+      </div>
+      <div class="field">
+        <label for="note">หมายเหตุ (ไม่บังคับ)</label>
+        <input type="text" id="note" name="note" maxlength="400" placeholder="เช่น ซะกาตประจำปี">
+      </div>
+      <button class="btn" type="submit">แจ้งยืนยันการโอน</button>
+    </form>
+  </div>
+  {% else %}
+  <a class="btn btn--ghost" href="/login?next=/donation/{{ campaign.slug }}">เข้าสู่ระบบเพื่อแจ้งยืนยันการโอน</a>
+  {% endif %}
+</div>
+{% endblock %}

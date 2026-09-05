@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set back_url = "/donation" %}
+{% block title %}ประวัติการบริจาค — {{ app_name }}{% endblock %}
+{% block page_title %}ประวัติการบริจาค{% endblock %}
+
+{% block content %}
+{% if request.query_params.get('reported') == '1' %}
+<div class="notice notice--ok">บันทึกการแจ้งโอนเรียบร้อยแล้ว ญะซากัลลอฮุค็อยรอน</div>
+{% endif %}
+
+<div class="section">
+  <div class="card" style="text-align:center">
+    <div class="card__meta">ยอดรวมที่แจ้งไว้</div>
+    <div style="font-size:26px;font-weight:700;color:var(--green)">{{ total|baht }} บาท</div>
+  </div>
+
+  {% for donation in donations %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:12px">
+      <div style="min-width:0">
+        <h2 class="card__title">{{ donation.campaign.name }}</h2>
+        <div class="card__meta">{{ donation.created_at|thai_datetime }}</div>
+        {% if donation.note %}<p class="card__text">{{ donation.note }}</p>{% endif %}
+      </div>
+      <div style="font-weight:700;color:var(--green);white-space:nowrap">{{ donation.amount|baht }} ฿</div>
+    </div>
+  </div>
+  {% else %}
+  <p class="empty">ยังไม่มีประวัติการบริจาค</p>
+  {% endfor %}
+</div>
+{% endblock %}

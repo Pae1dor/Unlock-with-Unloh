@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% set back_url = "/community" %}
+{% block title %}{{ post.title }} — {{ app_name }}{% endblock %}
+{% block page_title %}กระทู้{% endblock %}
+
+{% block content %}
+<article class="section">
+  <div class="card">
+    <div class="post-card__top">
+      <span class="avatar">{{ post.author.initial }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="post-card__author">{{ post.author.full_name }}</div>
+        <div class="card__meta">{{ post.created_at|thai_datetime }}</div>
+      </div>
+      <span class="badge">{{ forum_category_labels.get(post.category, 'ทั่วไป') }}</span>
+    </div>
+    <h1 class="post-card__title" style="font-size:17px">{{ post.title }}</h1>
+    <div class="article__body" style="margin-top:8px">
+      {% for para in post.content.split('\n\n') %}<p>{{ para }}</p>{% endfor %}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+      <button class="like-btn {% if liked %}is-liked{% endif %}" id="like-btn"
+              data-post-id="{{ post.id }}" data-logged-in="{{ 'yes' if user else 'no' }}">
+        <svg class="ico"><use href="#i-heart"></use></svg>
+        <span id="like-count">{{ post.like_count }}</span>
+      </button>
+      <span class="stat muted">
+        <svg class="ico"><use href="#i-comment"></use></svg>
+        <span id="comment-count">{{ post.comment_count }}</span> ความคิดเห็น
+      </span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="section__title" style="font-size:15px;margin-bottom:6px">ความคิดเห็น</h2>
+    <div id="comment-list">
+      {% for comment in post.comments %}
+      <div class="comment">
+        <span class="avatar">{{ comment.author.initial }}</span>
+        <div>
+          <div class="comment__name">{{ comment.author.full_name }}</div>
+          <div class="comment__meta">{{ comment.created_at|thai_datetime }}</div>
+          <div class="comment__text">{{ comment.content }}</div>
+        </div>
+      </div>
+      {% else %}
+      <p class="empty" id="no-comments" style="padding:18px 0">ยังไม่มีความคิดเห็น</p>
+      {% endfor %}
+    </div>
+
+    {% if user %}
+    <form id="comment-form" data-post-id="{{ post.id }}" style="margin-top:12px">
+      <div class="field" style="margin-bottom:9px">
+        <textarea id="comment-input" name="content" required placeholder="แสดงความคิดเห็น..." style="min-height:80px"></textarea>
+      </div>
+      <button class="btn" type="submit">ส่งความคิดเห็น</button>
+      <p class="card__meta" id="comment-error" style="color:var(--danger);margin-top:8px" hidden></p>
+    </form>
+    {% else %}
+    <a class="btn btn--ghost" href="/login?next=/community/{{ post.id }}" style="margin-top:12px">เข้าสู่ระบบเพื่อแสดงความคิดเห็น</a>
+    {% endif %}
+  </div>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/forum.js"></script>
+{% endblock %}

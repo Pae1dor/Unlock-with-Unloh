@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}เข้าสู่ระบบ — {{ app_name }}{% endblock %}
+{% block page_title %}เข้าสู่ระบบ{% endblock %}
+
+{% block content %}
+<div class="brandmark">
+  <div class="brandmark__ico"><svg class="ico"><use href="#i-mosque"></use></svg></div>
+  <div class="brandmark__name">{{ app_name }}</div>
+  <div class="brandmark__sub">อัสลามุอะลัยกุม ยินดีต้อนรับกลับ</div>
+</div>
+
+{% if registered %}<div class="notice notice--ok">สมัครสมาชิกเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ</div>{% endif %}
+{% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+
+<form class="form" method="post" action="/login">
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="field">
+    <label for="email">อีเมล</label>
+    <input type="email" id="email" name="email" required autocomplete="email" value="{{ form.get('email', '') }}">
+  </div>
+  <div class="field">
+    <label for="password">รหัสผ่าน</label>
+    <input type="password" id="password" name="password" required autocomplete="current-password">
+  </div>
+  <button class="btn" type="submit">เข้าสู่ระบบ</button>
+  <p class="form-foot">ยังไม่มีบัญชี? <a href="/register">สมัครสมาชิก</a></p>
+</form>
+{% endblock %}

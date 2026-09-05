@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ app_name }}{% endblock %}
+
+{% block header %}
+<header class="hero">
+  <p class="hero__salam">อัสลามุอะลัยกุม</p>
+  <p class="hero__greeting">{{ greeting }}{% if user %}, {{ user.full_name }}{% endif %}</p>
+  <div class="hero__dates">
+    <span>{{ prayer.gregorian }}</span>
+    {% if prayer.hijri %}<span>{{ prayer.hijri }}</span>{% endif %}
+  </div>
+  <a class="hero__city" href="/prayer-times">
+    <svg class="ico"><use href="#i-map-pin"></use></svg>{{ city }}
+  </a>
+</header>
+{% endblock %}
+
+{% block content %}
+{% if prayer.ok %}
+<div class="strip">
+  {% for item in prayer.timings %}
+  <div class="strip__item {% if item.key == prayer.current %}is-now{% endif %}">
+    <div class="strip__name">{{ item.name_th }}</div>
+    <div class="strip__time">{{ item.time }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="strip strip--error">{{ prayer.error }}</div>
+{% endif %}
+
+<section class="section">
+  <div class="section__head">
+    <h2 class="section__title">ทางลัด</h2>
+  </div>
+  <div class="grid8">
+    {% for action in quick_actions %}
+    <a class="qa" href="{{ action.url }}">
+      <span class="qa__ico"><svg class="ico"><use href="#i-{{ action.icon }}"></use></svg></span>
+      <span class="qa__label">{{ action.label }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section__head">
+    <h2 class="section__title">ข่าวสารล่าสุด</h2>
+    <a class="section__more" href="/news">ดูทั้งหมด</a>
+  </div>
+  {% for item in latest_news %}
+  <a class="card" href="/news/{{ item.id }}">
+    <span class="badge">{{ news_category_labels.get(item.category, 'ข่าวสาร') }}</span>
+    <h3 class="card__title" style="margin-top:6px">{{ item.title }}</h3>
+    <div class="card__meta">{{ item.published_at|thai_day }}</div>
+  </a>
+  {% else %}
+  <p class="empty">ยังไม่มีข่าวสาร — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
+  {% endfor %}
+</section>
+{% endblock %}

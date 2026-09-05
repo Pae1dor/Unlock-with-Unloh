@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}ข่าวสาร — {{ app_name }}{% endblock %}
+{% block page_title %}ข่าวสาร{% endblock %}
+
+{% block content %}
+<div class="tabs">
+  {% for key, label in news_categories %}
+  <a class="chip {% if key == category %}is-active{% endif %}" href="/news?category={{ key }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="section">
+  {% for item in items %}
+  <a class="news-card" href="/news/{{ item.id }}">
+    <div class="news-card__thumb" style="background:{{ item.image_color }}">
+      <svg class="ico"><use href="#i-newspaper"></use></svg>
+    </div>
+    <div class="news-card__body">
+      <span class="badge">{{ news_category_labels.get(item.category, 'ข่าวสาร') }}</span>
+      <h2 class="news-card__title">{{ item.title }}</h2>
+      <p class="card__meta">{{ item.published_at|thai_day }}</p>
+      <p class="card__text">{{ item.summary }}</p>
+    </div>
+  </a>
+  {% else %}
+  <p class="empty">ยังไม่มีข่าวในหมวดนี้</p>
+  {% endfor %}
+</div>
+{% endblock %}

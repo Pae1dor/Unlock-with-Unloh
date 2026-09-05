@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}ชุมชน — {{ app_name }}{% endblock %}
+{% block page_title %}ชุมชน{% endblock %}
+
+{% block content %}
+<div class="tabs">
+  <a class="chip {% if tab == 'popular' %}is-active{% endif %}" href="/community?tab=popular">กระทู้ยอดนิยม</a>
+  <a class="chip {% if tab == 'latest' %}is-active{% endif %}" href="/community?tab=latest">ล่าสุด</a>
+</div>
+
+<div class="section" style="padding-bottom:8px">
+  <a class="fab-link" href="/community/new" style="margin:0 0 14px">
+    <svg class="ico"><use href="#i-plus"></use></svg> สร้างกระทู้
+  </a>
+
+  {% for post in posts %}
+  <a class="post-card" href="/community/{{ post.id }}">
+    <div class="post-card__top">
+      <span class="avatar">{{ post.author.initial }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="post-card__author">{{ post.author.full_name }}</div>
+        <div class="card__meta">{{ post.created_at|thai_datetime }}</div>
+      </div>
+      <span class="badge">{{ forum_category_labels.get(post.category, 'ทั่วไป') }}</span>
+    </div>
+    <h2 class="post-card__title">{{ post.title }}</h2>
+    <p class="card__text">{{ post.snippet }}</p>
+    <div class="post-card__stats">
+      <span class="stat"><svg class="ico"><use href="#i-comment"></use></svg>{{ post.comment_count }}</span>
+      <span class="stat"><svg class="ico"><use href="#i-heart"></use></svg>{{ post.like_count }}</span>
+    </div>
+  </a>
+  {% else %}
+  <p class="empty">ยังไม่มีกระทู้ในชุมชน<br>มาเริ่มกระทู้แรกกันเลย</p>
+  {% endfor %}
+</div>
+{% endblock %}

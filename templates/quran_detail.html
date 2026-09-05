@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set back_url = "/quran" %}
+{% block title %}{{ (surah.name_th if surah else fallback_name) }} — {{ app_name }}{% endblock %}
+{% block page_title %}{{ surah.name_th if surah else fallback_name }}{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="notice notice--error">{{ error }}</div>
+{% else %}
+<div class="surah-head">
+  <div class="surah-head__ar">{{ surah.name_ar }}</div>
+  <div class="surah-head__th">{{ surah.number }}. {{ surah.name_th }}</div>
+  <div class="surah-head__meta">{{ surah.name_en }} · {{ surah.meaning_en }}</div>
+  <div class="surah-head__meta">{{ surah.ayah_count }} อายะฮ์ · {{ surah.revelation_th }}</div>
+</div>
+
+{% if surah.number not in [1, 9] %}
+<div class="bismillah">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+{% endif %}
+
+<div class="section">
+  {% for ayah in ayahs %}
+  <article class="ayah">
+    <div class="ayah__head">
+      <span class="ayah__num">{{ ayah.number }}</span>
+      {% if ayah.audio %}
+      <audio class="ayah__audio" controls preload="none" src="{{ ayah.audio }}"></audio>
+      {% endif %}
+    </div>
+    <div class="ayah__ar">{{ ayah.arabic }}</div>
+    {% if ayah.thai %}<div class="ayah__th">{{ ayah.thai }}</div>{% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
