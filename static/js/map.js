@@ -13,6 +13,21 @@
 
   var listEl = document.getElementById('mosque-list');
   var noteEl = document.getElementById('geo-note');
+  var searchInput = document.getElementById('mosque-search');
+  var noResults = document.getElementById('no-mosque-results');
+
+  if (searchInput && listEl) {
+    searchInput.addEventListener('input', function () {
+      var q = searchInput.value.trim().toLowerCase();
+      var visible = 0;
+      Array.prototype.slice.call(listEl.querySelectorAll('[data-search]')).forEach(function (row) {
+        var match = q === '' || (row.getAttribute('data-search') || '').toLowerCase().indexOf(q) !== -1;
+        row.hidden = !match;
+        if (match) visible++;
+      });
+      if (noResults) noResults.hidden = visible !== 0;
+    });
+  }
 
   fetch('/api/mosques')
     .then(function (res) { return res.json(); })

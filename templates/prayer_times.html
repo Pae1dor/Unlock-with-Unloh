@@ -3,40 +3,37 @@
 {% block page_title %}เวลาละหมาด{% endblock %}
 
 {% block content %}
-{% if prayer.ok %}
-{% set next_item = prayer.timings | selectattr('key', 'equalto', prayer.next) | first %}
-<div class="prayer-hero">
-  <div class="prayer-hero__next">ละหมาดถัดไป · {{ next_item.name_th if next_item else '—' }}</div>
-  <div class="prayer-hero__time">{{ next_item.time if next_item else '--:--' }}</div>
-  <div class="prayer-hero__meta">{{ prayer.gregorian }}</div>
-  {% if prayer.hijri %}<div class="prayer-hero__meta">{{ prayer.hijri }}</div>{% endif %}
-</div>
-{% else %}
-<div class="notice notice--error">{{ prayer.error }}</div>
-{% endif %}
-
 <div class="section">
-  <form class="inline-form" method="post" action="/set-city">
+  <form class="city-select" method="post" action="/set-city">
+    <svg class="ico"><use href="#i-map-pin"></use></svg>
     <input type="text" name="city" value="{{ city }}" placeholder="ชื่อเมือง เช่น ปัตตานี" aria-label="เมือง">
     <input type="hidden" name="next" value="/prayer-times">
-    <button class="btn" type="submit">เปลี่ยน</button>
+    <button class="city-select__go" type="submit" aria-label="เปลี่ยนเมือง">
+      <svg class="ico"><use href="#i-search"></use></svg>
+    </button>
   </form>
   <p class="map-note" style="padding-left:0">พิมพ์ชื่อเมืองได้ทั้งภาษาไทยและอังกฤษ (เช่น ปัตตานี, Pattani, เชียงใหม่)</p>
 </div>
 
 {% if prayer.ok %}
 <div class="section">
-  {% for item in prayer.timings %}
-  <div class="prayer-row {% if item.key == prayer.current %}is-now{% endif %}">
-    <svg class="ico"><use href="#i-clock"></use></svg>
-    <div class="prayer-row__name">
-      {{ item.name_th }}
-      <span class="prayer-row__sub">{{ item.key }}</span>
+  <div class="prayer-card">
+    <div class="prayer-card__date">
+      <div>{{ prayer.gregorian }}</div>
+      {% if prayer.hijri %}<div class="prayer-card__hijri">{{ prayer.hijri }}</div>{% endif %}
     </div>
-    <div class="prayer-row__time">{{ item.time }}</div>
+    <div class="prayer-list">
+      {% for item in prayer.timings %}
+      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %}" data-prayer-key="{{ item.key }}">
+        <span class="prayer-list__name">{{ item.name_th }}</span>
+        <span class="prayer-list__time">{{ item.time }}</span>
+      </div>
+      {% endfor %}
+    </div>
   </div>
-  {% endfor %}
 </div>
+{% else %}
+<div class="notice notice--error">{{ prayer.error }}</div>
 {% endif %}
 
 <div class="section">

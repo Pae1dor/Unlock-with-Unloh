@@ -36,11 +36,13 @@
         <svg class="ico"><use href="#i-users"></use></svg>
         <span>ชุมชน</span>
       </a>
+      {% block center_tab %}
       <a class="tab tab--center" href="/prayer-times" aria-label="เวลาละหมาด">
         <span class="tab__fab">
           <svg class="ico"><use href="#i-mosque"></use></svg>
         </span>
       </a>
+      {% endblock %}
       <a class="tab {% if active == 'news' %}is-active{% endif %}" href="/news">
         <svg class="ico"><use href="#i-newspaper"></use></svg>
         <span>ข่าวสาร</span>

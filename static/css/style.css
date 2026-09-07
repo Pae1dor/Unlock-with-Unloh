@@ -87,16 +87,40 @@ button { font: inherit; }
 
 /* ---------- home header ---------- */
 .hero {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(165deg, var(--green) 0%, #14472c 100%);
   color: #fff;
-  padding: 22px 18px 62px;
+  padding: 18px 18px 62px;
   border-radius: 0 0 26px 26px;
+}
+
+.hero__top {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hero__bell {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .14);
+  color: #fff;
+  cursor: pointer;
 }
 
 .hero__salam { font-size: 20px; font-weight: 700; margin: 0; }
 .hero__greeting { margin: 2px 0 12px; font-size: 14px; opacity: .88; }
 
 .hero__dates {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
@@ -105,6 +129,7 @@ button { font: inherit; }
 }
 
 .hero__city {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -161,6 +186,7 @@ button { font: inherit; }
   grid-template-columns: repeat(4, 1fr);
   gap: 14px 6px;
 }
+.grid8--3col { grid-template-columns: repeat(3, 1fr); gap: 16px 8px; }
 
 .qa { text-align: center; }
 .qa__ico {
@@ -172,9 +198,52 @@ button { font: inherit; }
   place-items: center;
   background: var(--green-soft);
   color: var(--green);
+  transition: transform .12s;
 }
+.qa:active .qa__ico { transform: scale(.93); }
 .qa__ico .ico { width: 25px; height: 25px; }
 .qa__label { font-size: 11.5px; color: var(--ink); line-height: 1.3; display: block; }
+
+/* Each quick action gets its own accent so the grid doesn't read as one flat block. */
+.grid8 .qa:nth-child(1) .qa__ico { background: #e4ecf7; color: #2f5fa8; }
+.grid8 .qa:nth-child(2) .qa__ico { background: var(--green-soft); color: var(--green); }
+.grid8 .qa:nth-child(3) .qa__ico { background: #fbe6e6; color: #c24545; }
+.grid8 .qa:nth-child(4) .qa__ico { background: #fdece0; color: #c46a2c; }
+.grid8 .qa:nth-child(5) .qa__ico { background: #efe6f7; color: #7048a8; }
+.grid8 .qa:nth-child(6) .qa__ico { background: #e0f2f0; color: #1f8078; }
+.grid8 .qa:nth-child(7) .qa__ico { background: var(--gold-soft); color: #8a6a1f; }
+.grid8 .qa:nth-child(8) .qa__ico { background: #eceff1; color: #5c6b66; }
+
+/* ---------- home mascot banner ---------- */
+.mascot-card {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  line-height: 0;
+}
+.mascot-card__img { display: block; width: 100%; height: auto; }
+.mascot-card__shortcut {
+  position: absolute;
+  top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 58px;
+  padding: 9px 4px 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: var(--shadow);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+  text-align: center;
+}
+.mascot-card__shortcut .ico { width: 20px; height: 20px; color: var(--green); }
+.mascot-card__shortcut--left { left: 14px; }
+.mascot-card__shortcut--right { right: 14px; }
 
 /* ---------- generic cards ---------- */
 .card {
@@ -238,31 +307,91 @@ button { font: inherit; }
 .badge--gold { background: var(--gold-soft); color: #7a5f21; }
 
 /* ---------- prayer times page ---------- */
-.prayer-hero {
-  background: linear-gradient(165deg, var(--green) 0%, #14472c 100%);
-  color: #fff;
-  padding: 20px 18px 24px;
-  text-align: center;
+.city-select {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 10px 10px 14px;
 }
-.prayer-hero__next { font-size: 13px; opacity: .85; }
-.prayer-hero__time { font-size: 34px; font-weight: 700; letter-spacing: .5px; }
-.prayer-hero__meta { font-size: 12.5px; opacity: .88; }
+.city-select .ico { width: 18px; height: 18px; flex: 0 0 auto; color: var(--green); }
+.city-select input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+}
+.city-select__go {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--green-soft);
+  color: var(--green);
+  cursor: pointer;
+}
 
-.prayer-row {
+.prayer-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.prayer-card__date {
+  text-align: center;
+  padding: 16px 14px 14px;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.prayer-card__hijri { font-size: 12.5px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+.prayer-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+  font-weight: 600;
+}
+.prayer-list__row.is-now { background: var(--green-soft); color: var(--green); }
+.prayer-list__time { font-size: 15.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.prayer-row__sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+
+/* ---------- generic divided list card (mosques / donation orgs) ---------- */
+.list-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.list-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--card);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  padding: 13px 15px;
-  margin-bottom: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
 }
-.prayer-row.is-now { background: var(--green); color: #fff; }
-.prayer-row.is-now .prayer-row__sub { color: rgba(255, 255, 255, .8); }
-.prayer-row__name { flex: 1; font-weight: 600; }
-.prayer-row__sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
-.prayer-row__time { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.list-row:first-child { border-top: 0; }
+.list-row .ico { width: 20px; height: 20px; flex: 0 0 auto; }
+.list-row__title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.list-row__dist { flex: 0 0 auto; font-size: 12.5px; font-weight: 700; color: var(--green); white-space: nowrap; }
 
 /* ---------- toggle ---------- */
 .toggle-row {
@@ -376,7 +505,74 @@ button { font: inherit; }
   font-size: 12.5px;
   font-weight: 700;
 }
-.ayah__audio { margin-left: auto; height: 30px; max-width: 170px; }
+.ayah.is-playing { box-shadow: 0 0 0 2px var(--green) inset, var(--shadow); }
+.ayah.is-playing .ayah__num { background: var(--green); color: #fff; }
+
+/* ---------- qibla compass (top of surah page) ---------- */
+.qibla {
+  width: 160px;
+  margin: 20px auto 4px;
+}
+.qibla__dial { display: block; width: 160px; height: 160px; }
+.qibla__ticks line { stroke: var(--green); stroke-width: 2; opacity: .3; }
+.qibla__dir { font-size: 11px; font-weight: 700; fill: var(--muted); }
+.qibla__needle {
+  transition: transform .3s ease-out;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+.qibla__label {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  padding: 0 20px;
+}
+
+/* ---------- bottom-tab FAB repurposed as whole-surah play control ---------- */
+.tab__fab--audio { cursor: pointer; }
+.fab-progress {
+  position: absolute;
+  inset: -5px;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+}
+#fab-progress-ring { transition: stroke-dashoffset .25s linear; }
+
+/* ---------- sticky whole-surah audio bar ---------- */
+.audio-bar {
+  position: fixed;
+  bottom: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 398px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+  padding: 10px 14px;
+}
+.audio-bar__btn {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.audio-bar__info { flex: 1; min-width: 0; }
+.audio-bar__ayah { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.audio-bar__track { height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.audio-bar__fill { height: 100%; width: 0%; background: var(--green); border-radius: 999px; transition: width .2s linear; }
 .ayah__ar {
   font-family: "Traditional Arabic", "Amiri", "Scheherazade New", "Segoe UI", serif;
   font-size: 24px;
@@ -426,6 +622,27 @@ button { font: inherit; }
 .news-card__thumb .ico { width: 34px; height: 34px; }
 .news-card__body { padding: 12px 14px 14px; }
 .news-card__title { font-size: 14.5px; font-weight: 700; margin: 6px 0 4px; }
+
+.news-card--compact {
+  display: flex;
+  align-items: stretch;
+}
+.news-card--compact .news-card__thumb {
+  width: 74px;
+  height: auto;
+  flex: 0 0 auto;
+}
+.news-card--compact .news-card__thumb .ico { width: 24px; height: 24px; }
+.news-card--compact .news-card__body { flex: 1; min-width: 0; padding: 11px 13px; }
+.news-card--compact .news-card__title {
+  margin: 5px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-card--compact .news-card__title--top { margin-top: 0; }
 
 .news-hero { height: 170px; display: grid; place-items: center; color: rgba(255, 255, 255, .5); }
 .news-hero .ico { width: 44px; height: 44px; }

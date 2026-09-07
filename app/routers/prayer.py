@@ -12,6 +12,21 @@ from app.templating import templates
 router = APIRouter(tags=["prayer"])
 
 
+@router.get("/api/prayer-status")
+def prayer_status(city: str = Depends(get_city)):
+    """Lightweight JSON poll so pages can move the 'current prayer' highlight
+    and the 'ละหมาดถัดไป' countdown live, without a full page reload."""
+    prayer = get_prayer_times(city)
+    next_item = next((t for t in prayer["timings"] if t["key"] == prayer["next"]), None)
+    return {
+        "ok": prayer["ok"],
+        "current": prayer["current"],
+        "next": prayer["next"],
+        "next_name": next_item["name_th"] if next_item else None,
+        "next_time": next_item["time"] if next_item else None,
+    }
+
+
 @router.get("/prayer-times")
 def prayer_times(
     request: Request,

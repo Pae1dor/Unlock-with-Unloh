@@ -11,15 +11,13 @@
 
 <div class="section">
   {% for item in items %}
-  <a class="news-card" href="/news/{{ item.id }}">
+  <a class="news-card news-card--compact" href="/news/{{ item.id }}">
     <div class="news-card__thumb" style="background:{{ item.image_color }}">
       <svg class="ico"><use href="#i-newspaper"></use></svg>
     </div>
     <div class="news-card__body">
-      <span class="badge">{{ news_category_labels.get(item.category, 'ข่าวสาร') }}</span>
-      <h2 class="news-card__title">{{ item.title }}</h2>
+      <h2 class="news-card__title news-card__title--top">{{ item.title }}</h2>
       <p class="card__meta">{{ item.published_at|thai_day }}</p>
-      <p class="card__text">{{ item.summary }}</p>
     </div>
   </a>
   {% else %}

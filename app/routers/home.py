@@ -1,10 +1,12 @@
 """หน้าแรก — greeting, dates, prayer strip and the 8 quick-action grid."""
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import CITY_COOKIE
+from app.config import CITY_COOKIE, DEFAULT_CITY
 from app.database import get_db
 from app.deps import get_city, get_current_user
 from app.models import News, User
@@ -56,5 +58,5 @@ def set_city(city: str = Form(...), next: str = Form("/")):
     """Persist the chosen city in a cookie; used for prayer times and Hijri date."""
     target = next if next.startswith("/") and not next.startswith("//") else "/"
     response = RedirectResponse(target, status_code=303)
-    response.set_cookie(CITY_COOKIE, city.strip() or "กรุงเทพมหานคร", max_age=60 * 60 * 24 * 365, path="/")
+    response.set_cookie(CITY_COOKIE, quote(city.strip() or DEFAULT_CITY), max_age=60 * 60 * 24 * 365, path="/")
     return response

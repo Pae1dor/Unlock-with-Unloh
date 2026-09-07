@@ -7,6 +7,27 @@
 {% if error %}
 <div class="notice notice--error">{{ error }}</div>
 {% else %}
+<div class="qibla">
+  <svg class="qibla__dial" viewBox="0 0 160 160" aria-hidden="true">
+    <circle cx="80" cy="80" r="72" fill="none" stroke="#e8f2ec" stroke-width="10"/>
+    <g class="qibla__ticks">
+      {% for i in range(12) %}
+      <line x1="80" y1="12" x2="80" y2="22" transform="rotate({{ i * 30 }} 80 80)"/>
+      {% endfor %}
+    </g>
+    <text x="80" y="27" text-anchor="middle" class="qibla__dir">N</text>
+    <text x="143" y="85" text-anchor="middle" class="qibla__dir">E</text>
+    <text x="80" y="149" text-anchor="middle" class="qibla__dir">S</text>
+    <text x="19" y="85" text-anchor="middle" class="qibla__dir">W</text>
+    <g id="qibla-needle" class="qibla__needle">
+      <polygon points="80,26 87,80 73,80" fill="#1B5E3A"/>
+      <polygon points="80,134 87,80 73,80" fill="#c9d8ce"/>
+      <circle cx="80" cy="80" r="6" fill="#1B5E3A"/>
+    </g>
+  </svg>
+  <div class="qibla__label" id="qibla-label">กำลังค้นหาทิศกิบลัต…</div>
+</div>
+
 <div class="surah-head">
   <div class="surah-head__ar">{{ surah.name_ar }}</div>
   <div class="surah-head__th">{{ surah.number }}. {{ surah.name_th }}</div>
@@ -18,19 +39,46 @@
 <div class="bismillah">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
 {% endif %}
 
-<div class="section">
+<div class="section" id="ayah-list">
   {% for ayah in ayahs %}
-  <article class="ayah">
+  <article class="ayah" id="ayah-{{ ayah.number }}" data-ayah-index="{{ loop.index0 }}" data-audio="{{ ayah.audio or '' }}">
     <div class="ayah__head">
       <span class="ayah__num">{{ ayah.number }}</span>
-      {% if ayah.audio %}
-      <audio class="ayah__audio" controls preload="none" src="{{ ayah.audio }}"></audio>
-      {% endif %}
     </div>
     <div class="ayah__ar">{{ ayah.arabic }}</div>
     {% if ayah.thai %}<div class="ayah__th">{{ ayah.thai }}</div>{% endif %}
   </article>
   {% endfor %}
 </div>
+
+<div class="audio-bar" id="audio-bar" hidden>
+  <button class="audio-bar__btn" id="audio-bar-toggle" type="button" aria-label="เล่น/หยุด">
+    <svg class="ico" id="audio-bar-icon"><use href="#i-play"></use></svg>
+  </button>
+  <div class="audio-bar__info">
+    <div class="audio-bar__ayah" id="audio-bar-ayah">อายะฮ์ 1 / {{ surah.ayah_count }}</div>
+    <div class="audio-bar__track"><div class="audio-bar__fill" id="audio-bar-fill"></div></div>
+  </div>
+</div>
 {% endif %}
+{% endblock %}
+
+{% if not error %}
+{% block center_tab %}
+<div class="tab tab--center">
+  <button class="tab__fab tab__fab--audio" id="fab-play-toggle" type="button" aria-label="เล่น/หยุดฟังทั้งซูเราะฮ์">
+    <svg class="fab-progress" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="3"/>
+      <circle id="fab-progress-ring" cx="32" cy="32" r="30" fill="none" stroke="#fff" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5" transform="rotate(-90 32 32)"/>
+    </svg>
+    <svg class="ico" id="fab-play-icon"><use href="#i-play"></use></svg>
+  </button>
+</div>
+{% endblock %}
+{% endif %}
+
+{% block scripts %}
+<script src="/static/js/quran-player.js"></script>
+<script src="/static/js/qibla.js"></script>
 {% endblock %}

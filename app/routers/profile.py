@@ -1,4 +1,6 @@
 """บัญชี — profile view and edit."""
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func, select
@@ -50,5 +52,5 @@ def update_profile(
 
     response = RedirectResponse("/profile?saved=1", status_code=303)
     # Keep the prayer-time city in sync with the profile.
-    response.set_cookie(CITY_COOKIE, user.city, max_age=60 * 60 * 24 * 365, path="/")
+    response.set_cookie(CITY_COOKIE, quote(user.city), max_age=60 * 60 * 24 * 365, path="/")
     return response

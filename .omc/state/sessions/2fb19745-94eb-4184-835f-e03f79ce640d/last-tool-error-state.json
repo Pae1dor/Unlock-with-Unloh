@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"for i in $(seq 1 20); do code=$(curl -s -o /dev/null -w \\\"%{http_code}\\\" http://127.0.0.1:8000/); if [ \\\"$code\\\" = \\\"200\\\" ]; then echo UP; break; fi; sleep 1; done; curl -s -o /dev/null -...",
-  "error": "Exit code 143\nCommand timed out after 30s",
-  "timestamp": "2026-09-05T15:53:39.097Z",
+  "tool_input_preview": "{\"command\":\"sleep 2; cat /tmp/uvicorn.log; echo \\\"---\\\"; curl -s --max-time 8 -o /dev/null -w \\\"home:%{http_code}\\\\n\\\" http://127.0.0.1:8000/\",\"timeout\":20000,\"description\":\"Check log and test connect...",
+  "error": "Exit code 28\nINFO:     Started server process [26176]\r\nINFO:     Waiting for application startup.\r\nINFO:     Application startup complete.\r\nINFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)\r\n---\nhome:000",
+  "timestamp": "2026-09-07T13:59:00.573Z",
   "retry_count": 1
 }

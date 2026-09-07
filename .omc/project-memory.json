@@ -1,11 +1,20 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1788619401006,
+  "lastScanned": 1788789083599,
   "projectRoot": "c:\\Users\\hp\\OneDrive\\Desktop\\Projectปัญยาอ่อน\\Unlock with Unloh",
   "techStack": {
-    "languages": [],
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "requirements.txt"
+        ]
+      }
+    ],
     "frameworks": [],
-    "packageManager": null,
+    "packageManager": "pip",
     "runtime": null
   },
   "build": {
@@ -16,7 +25,7 @@
     "scripts": {}
   },
   "conventions": {
-    "namingStyle": null,
+    "namingStyle": "snake_case",
     "importStyle": null,
     "testPattern": null,
     "fileOrganization": null
@@ -24,288 +33,62 @@
   "structure": {
     "isMonorepo": false,
     "workspaces": [],
-    "mainDirectories": [],
-    "gitBranches": null
+    "mainDirectories": [
+      "app",
+      "static"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
   "customNotes": [],
-  "directoryMap": {},
-  "hotPaths": [
-    {
-      "path": "app/services/alquran.py",
-      "accessCount": 10,
-      "lastAccessed": 1788622544577,
-      "type": "file"
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 10,
+      "lastAccessed": 1788789083351,
+      "keyFiles": [
+        "auth.py",
+        "config.py",
+        "database.py",
+        "deps.py",
+        "main.py"
+      ]
     },
-    {
-      "path": "app/services/aladhan.py",
-      "accessCount": 3,
-      "lastAccessed": 1788622058717,
-      "type": "file"
+    "static": {
+      "path": "static",
+      "purpose": "Static files",
+      "fileCount": 0,
+      "lastAccessed": 1788789083353,
+      "keyFiles": []
     },
-    {
-      "path": "templates/mosques.html",
-      "accessCount": 2,
-      "lastAccessed": 1788621198306,
-      "type": "file"
+    "templates": {
+      "path": "templates",
+      "purpose": null,
+      "fileCount": 19,
+      "lastAccessed": 1788789083354,
+      "keyFiles": [
+        "base.html",
+        "community.html",
+        "community_detail.html",
+        "community_new.html",
+        "donation.html"
+      ]
     },
-    {
-      "path": "",
-      "accessCount": 2,
-      "lastAccessed": 1788622460880,
-      "type": "directory"
-    },
-    {
-      "path": "requirements.txt",
-      "accessCount": 1,
-      "lastAccessed": 1788620403308,
-      "type": "file"
-    },
-    {
-      "path": ".env.example",
-      "accessCount": 1,
-      "lastAccessed": 1788620406806,
-      "type": "file"
-    },
-    {
-      "path": "docker-compose.yml",
-      "accessCount": 1,
-      "lastAccessed": 1788620408855,
-      "type": "file"
-    },
-    {
-      "path": "app/__init__.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620414888,
-      "type": "file"
-    },
-    {
-      "path": "app/config.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620420248,
-      "type": "file"
-    },
-    {
-      "path": "app/database.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620424446,
-      "type": "file"
-    },
-    {
-      "path": "app/models.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620463712,
-      "type": "file"
-    },
-    {
-      "path": "app/auth.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620473704,
-      "type": "file"
-    },
-    {
-      "path": "app/deps.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620479420,
-      "type": "file"
-    },
-    {
-      "path": "app/services/__init__.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620489086,
-      "type": "file"
-    },
-    {
-      "path": "app/schemas.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620652429,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/auth.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620707352,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/home.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620721413,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/prayer.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620726344,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/quran.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620735953,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/mosques.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620740091,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/news.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620749441,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/community.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620770176,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/donation.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620786988,
-      "type": "file"
-    },
-    {
-      "path": "app/routers/profile.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620792383,
-      "type": "file"
-    },
-    {
-      "path": "app/seed.py",
-      "accessCount": 1,
-      "lastAccessed": 1788620929765,
-      "type": "file"
-    },
-    {
-      "path": "templates/base.html",
-      "accessCount": 1,
-      "lastAccessed": 1788620942203,
-      "type": "file"
-    },
-    {
-      "path": "templates/_icons.html",
-      "accessCount": 1,
-      "lastAccessed": 1788620978021,
-      "type": "file"
-    },
-    {
-      "path": "static/css/style.css",
-      "accessCount": 1,
-      "lastAccessed": 1788621057337,
-      "type": "file"
-    },
-    {
-      "path": "templates/home.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621072093,
-      "type": "file"
-    },
-    {
-      "path": "templates/prayer_times.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621083591,
-      "type": "file"
-    },
-    {
-      "path": "templates/quran_list.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621093972,
-      "type": "file"
-    },
-    {
-      "path": "templates/quran_detail.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621099160,
-      "type": "file"
-    },
-    {
-      "path": "templates/news_list.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621111903,
-      "type": "file"
-    },
-    {
-      "path": "templates/news_detail.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621114792,
-      "type": "file"
-    },
-    {
-      "path": "templates/community.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621125841,
-      "type": "file"
-    },
-    {
-      "path": "templates/community_new.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621133710,
-      "type": "file"
-    },
-    {
-      "path": "templates/community_detail.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621150386,
-      "type": "file"
-    },
-    {
-      "path": "templates/donation.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621164148,
-      "type": "file"
-    },
-    {
-      "path": "templates/donation_detail.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621171787,
-      "type": "file"
-    },
-    {
-      "path": "templates/donation_history.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621180373,
-      "type": "file"
-    },
-    {
-      "path": "templates/login.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621210962,
-      "type": "file"
-    },
-    {
-      "path": "templates/register.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621216933,
-      "type": "file"
-    },
-    {
-      "path": "templates/profile.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621230994,
-      "type": "file"
-    },
-    {
-      "path": "templates/error.html",
-      "accessCount": 1,
-      "lastAccessed": 1788621234888,
-      "type": "file"
-    },
-    {
-      "path": "static/js/quran-search.js",
-      "accessCount": 1,
-      "lastAccessed": 1788621249088,
-      "type": "file"
-    },
-    {
-      "path": "README.md",
-      "accessCount": 1,
-      "lastAccessed": 1788622454206,
-      "type": "file"
+    "app\\services": {
+      "path": "app\\services",
+      "purpose": "Business logic services",
+      "fileCount": 3,
+      "lastAccessed": 1788789083366,
+      "keyFiles": [
+        "aladhan.py",
+        "alquran.py",
+        "__init__.py"
+      ]
     }
-  ],
+  },
+  "hotPaths": [],
   "userDirectives": []
 }

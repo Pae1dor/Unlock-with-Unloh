@@ -4,27 +4,38 @@
 
 {% block content %}
 <div class="section">
-  {% if user %}
-  <a class="link-row" href="/donation/history">
-    <svg class="ico"><use href="#i-clock"></use></svg>
-    <span>ประวัติการบริจาคของฉัน</span>
-  </a>
-  {% endif %}
-
-  {% for campaign in campaigns %}
-  <div class="card">
-    <h2 class="card__title">{{ campaign.name }}</h2>
-    <p class="card__text">{{ campaign.description }}</p>
-    {% if campaign.qr_image_path %}
-    <div class="qr-box" style="margin-top:12px">
-      <img src="{{ campaign.qr_image_path }}" alt="QR สำหรับบริจาค {{ campaign.name }}" width="190" height="190">
-      <p class="card__meta" style="margin-top:6px">สแกนเพื่อดูข้อมูลบัญชีรับบริจาค</p>
-    </div>
-    {% endif %}
-    <a class="btn" href="/donation/{{ campaign.slug }}" style="margin-top:12px">ดูรายละเอียด</a>
+  <div class="section__head">
+    <h2 class="section__title">เลือกประเภท</h2>
   </div>
-  {% else %}
-  <p class="empty">ยังไม่มีโครงการบริจาค — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
-  {% endfor %}
+  <div class="grid8 grid8--3col">
+    <a class="qa" href="#organizations"><span class="qa__ico"><svg class="ico"><use href="#i-coin"></use></svg></span><span class="qa__label">ซะกาต</span></a>
+    <a class="qa" href="#organizations"><span class="qa__ico"><svg class="ico"><use href="#i-heart"></use></svg></span><span class="qa__label">ซะกาตฟิตเราะห์</span></a>
+    <a class="qa" href="#organizations"><span class="qa__ico"><svg class="ico"><use href="#i-document"></use></svg></span><span class="qa__label">พินัยกรรม</span></a>
+    <a class="qa" href="#organizations"><span class="qa__ico"><svg class="ico"><use href="#i-book"></use></svg></span><span class="qa__label">วะกัฟ</span></a>
+    <a class="qa" href="#organizations"><span class="qa__ico"><svg class="ico"><use href="#i-shield"></use></svg></span><span class="qa__label">ช่วยเหลือฉุกเฉิน</span></a>
+    <a class="qa" href="#organizations"><span class="qa__ico"><svg class="ico"><use href="#i-more"></use></svg></span><span class="qa__label">อื่นๆ</span></a>
+  </div>
 </div>
+
+<div class="section" id="organizations">
+  <div class="section__head">
+    <h2 class="section__title">องค์กรที่เชื่อถือได้</h2>
+  </div>
+  <div class="list-card">
+    {% for campaign in campaigns %}
+    <a class="list-row" href="/donation/{{ campaign.slug }}">
+      <svg class="ico" style="color:var(--green)"><use href="#i-mosque"></use></svg>
+      <span class="list-row__title">{{ campaign.name }}</span>
+    </a>
+    {% else %}
+    <p class="empty">ยังไม่มีโครงการบริจาค — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% if campaigns %}
+<div class="section">
+  <a class="btn" href="/donation/history">ประวัติการบริจาค</a>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" role="img" aria-label="ตัวการ์ตูนต้อนรับหน้าแรก">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef7f1"/>
+      <stop offset="1" stop-color="#dcece2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="300" height="340" fill="url(#sky)"/>
+
+  <circle cx="240" cy="55" r="38" fill="#ffe9b8" opacity=".35"/>
+  <circle cx="240" cy="55" r="22" fill="#ffdd94"/>
+
+  <rect x="0" y="298" width="300" height="42" fill="#d7e8dc"/>
+  <ellipse cx="150" cy="316" rx="78" ry="12" fill="#1B5E3A" opacity=".08"/>
+
+  <!-- palm: left -->
+  <rect x="34" y="230" width="9" height="80" rx="4" fill="#8a9a6e"/>
+  <g fill="#6fae7c">
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(-60 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(-30 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(30 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(60 38 225)"/>
+  </g>
+
+  <!-- palm: right -->
+  <rect x="257" y="230" width="9" height="80" rx="4" fill="#8a9a6e"/>
+  <g fill="#6fae7c">
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(-60 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(-30 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(30 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(60 262 225)"/>
+  </g>
+
+  <!-- mosque -->
+  <g fill="#a9cdb7">
+    <rect x="68" y="150" width="12" height="110" rx="5"/>
+    <circle cx="74" cy="148" r="9"/>
+    <rect x="72" y="132" width="4" height="18"/>
+    <rect x="220" y="150" width="12" height="110" rx="5"/>
+    <circle cx="226" cy="148" r="9"/>
+    <rect x="224" y="132" width="4" height="18"/>
+    <rect x="108" y="185" width="84" height="75"/>
+    <circle cx="150" cy="185" r="36"/>
+    <rect x="147" y="140" width="6" height="16"/>
+    <circle cx="150" cy="138" r="5"/>
+  </g>
+
+  <!-- character -->
+  <path d="M118,232 L182,232 L202,308 Q202,314 196,314 L104,314 Q98,314 98,308 Z" fill="#f4efe1"/>
+  <rect x="123" y="272" width="54" height="10" rx="5" fill="#c9a24a"/>
+
+  <ellipse cx="117" cy="238" rx="20" ry="32" fill="#1B5E3A"/>
+  <ellipse cx="183" cy="238" rx="20" ry="32" fill="#1B5E3A"/>
+
+  <circle cx="150" cy="194" r="43" fill="#1B5E3A"/>
+  <circle cx="150" cy="207" r="24" fill="#f4c9a0"/>
+
+  <circle cx="133" cy="213" r="4" fill="#f2a9a0" opacity=".6"/>
+  <circle cx="167" cy="213" r="4" fill="#f2a9a0" opacity=".6"/>
+
+  <path d="M138,203 q4,5 8,0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M154,203 q4,5 8,0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M141,216 q9,7 18,0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+</svg>

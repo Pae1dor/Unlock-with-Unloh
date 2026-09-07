@@ -7,23 +7,31 @@
 {% endblock %}
 
 {% block content %}
+<div class="searchbox" style="margin:14px 16px 0">
+  <svg class="ico"><use href="#i-search"></use></svg>
+  <input type="search" id="mosque-search" placeholder="ค้นหามัสยิดหรือพื้นที่" autocomplete="off">
+</div>
+
 <div id="map"></div>
 <p class="map-note" id="geo-note">เปิดสิทธิ์ตำแหน่งที่ตั้งเพื่อดูระยะทางจากคุณถึงแต่ละมัสยิด</p>
 
-<div class="section" id="mosque-list">
-  {% for mosque in mosques %}
-  <div class="row" data-lat="{{ mosque.lat }}" data-lng="{{ mosque.lng }}" data-id="{{ mosque.id }}">
-    <span class="row__num"><svg class="ico"><use href="#i-mosque"></use></svg></span>
-    <span class="row__body">
-      <span class="row__title">{{ mosque.name }}</span>
-      <span class="row__sub">{{ mosque.address }}</span>
-      {% if mosque.phone %}<span class="row__sub">โทร. {{ mosque.phone }}</span>{% endif %}
-    </span>
-    <span class="dist" data-dist>—</span>
+<div class="section" style="padding-top:6px">
+  <div class="section__head">
+    <h2 class="section__title">มัสยิดใกล้เคียง</h2>
   </div>
-  {% else %}
-  <p class="empty">ยังไม่มีข้อมูลมัสยิด — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
-  {% endfor %}
+  <div class="list-card" id="mosque-list">
+    {% for mosque in mosques %}
+    <div class="list-row" data-lat="{{ mosque.lat }}" data-lng="{{ mosque.lng }}" data-id="{{ mosque.id }}"
+         data-search="{{ mosque.name }} {{ mosque.address }}" title="{{ mosque.address }}">
+      <svg class="ico" style="color:var(--green)"><use href="#i-map-pin"></use></svg>
+      <span class="list-row__title">{{ mosque.name }}</span>
+      <span class="list-row__dist" data-dist>—</span>
+    </div>
+    {% else %}
+    <p class="empty">ยังไม่มีข้อมูลมัสยิด — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
+    {% endfor %}
+    <p class="empty" id="no-mosque-results" hidden>ไม่พบมัสยิดที่ค้นหา</p>
+  </div>
 </div>
 {% endblock %}
 

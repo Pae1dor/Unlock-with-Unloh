@@ -19,9 +19,8 @@
       <span class="avatar">{{ post.author.initial }}</span>
       <div style="flex:1;min-width:0">
         <div class="post-card__author">{{ post.author.full_name }}</div>
-        <div class="card__meta">{{ post.created_at|thai_datetime }}</div>
+        <div class="card__meta">{{ post.created_at|thai_datetime }} · {{ forum_category_labels.get(post.category, 'ทั่วไป') }}</div>
       </div>
-      <span class="badge">{{ forum_category_labels.get(post.category, 'ทั่วไป') }}</span>
     </div>
     <h2 class="post-card__title">{{ post.title }}</h2>
     <p class="card__text">{{ post.snippet }}</p>

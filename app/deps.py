@@ -1,4 +1,6 @@
 """Shared FastAPI dependencies: current user from the httpOnly cookie, active city."""
+from urllib.parse import unquote
+
 from fastapi import Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -38,7 +40,9 @@ def get_city(request: Request, user: User | None = Depends(get_current_user)) ->
     """City used for prayer times / qibla lookups: cookie wins, then profile, then default."""
     cookie_city = request.cookies.get(CITY_COOKIE)
     if cookie_city:
-        return cookie_city
+        # Cookie values must be Latin-1 (HTTP header rules), so Thai city
+        # names are percent-encoded on write (see /set-city) and decoded here.
+        return unquote(cookie_city)
     if user is not None and user.city:
         return user.city
     return DEFAULT_CITY
