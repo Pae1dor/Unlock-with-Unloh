@@ -20,8 +20,8 @@ METHOD = 3
 # The five obligatory prayers, in order, with their Thai labels.
 PRAYERS: list[tuple[str, str]] = [
     ("Fajr", "ฟัจร์"),
-    ("Dhuhr", "ซุฮร์"),
-    ("Asr", "อัซร์"),
+    ("Dhuhr", "ซุฮ์รี"),
+    ("Asr", "อัสรี"),
     ("Maghrib", "มัฆริบ"),
     ("Isha", "อิชาอ์"),
 ]

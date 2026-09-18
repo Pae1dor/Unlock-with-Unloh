@@ -17,9 +17,9 @@
         <svg class="ico"><use href="#i-back"></use></svg>
       </a>
       <h1 class="topbar__title">{% block page_title %}{{ app_name }}{% endblock %}</h1>
-      <button class="topbar__btn" type="button" aria-label="การแจ้งเตือน">
+      <a class="topbar__btn" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
         <svg class="ico"><use href="#i-bell"></use></svg>
-      </button>
+      </a>
     </header>
     {% endblock %}
 

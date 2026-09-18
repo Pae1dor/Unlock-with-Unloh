@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" role="img" aria-label="ลวดลายเรขาคณิตและมัสยิด">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef7f1"/>
+      <stop offset="1" stop-color="#dcece2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="300" height="340" fill="url(#sky)"/>
+
+  <circle cx="240" cy="55" r="38" fill="#ffe9b8" opacity=".35"/>
+  <circle cx="240" cy="55" r="22" fill="#ffdd94"/>
+
+  <rect x="0" y="298" width="300" height="42" fill="#d7e8dc"/>
+  <ellipse cx="150" cy="316" rx="78" ry="12" fill="#1B5E3A" opacity=".08"/>
+
+  <!-- palm: left -->
+  <rect x="34" y="230" width="9" height="80" rx="4" fill="#8a9a6e"/>
+  <g fill="#6fae7c">
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(-60 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(-30 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(30 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(60 38 225)"/>
+  </g>
+
+  <!-- palm: right -->
+  <rect x="257" y="230" width="9" height="80" rx="4" fill="#8a9a6e"/>
+  <g fill="#6fae7c">
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(-60 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(-30 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(30 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(60 262 225)"/>
+  </g>
+
+  <!-- mosque, brought forward as the main subject -->
+  <g fill="#2E7D52">
+    <rect x="54" y="168" width="14" height="130" rx="6"/>
+    <circle cx="61" cy="165" r="10"/>
+    <rect x="59" y="146" width="4" height="20"/>
+    <rect x="232" y="168" width="14" height="130" rx="6"/>
+    <circle cx="239" cy="165" r="10"/>
+    <rect x="237" y="146" width="4" height="20"/>
+    <rect x="96" y="206" width="108" height="92" rx="4"/>
+    <circle cx="150" cy="206" r="46"/>
+    <rect x="146" y="148" width="8" height="20"/>
+    <circle cx="150" cy="144" r="7"/>
+  </g>
+  <path d="M134,298 v-34 a16,16 0 0 1 32,0 v34 z" fill="#f4efe1"/>
+
+  <!-- eight-point geometric star -->
+  <g fill="#c9a24a" opacity=".9">
+    <rect x="132" y="196" width="36" height="36" rx="3" transform="rotate(0 150 214)"/>
+    <rect x="132" y="196" width="36" height="36" rx="3" transform="rotate(45 150 214)"/>
+  </g>
+  <circle cx="150" cy="214" r="9" fill="#1B5E3A"/>
+</svg>

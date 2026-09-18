@@ -214,6 +214,47 @@ button { font: inherit; }
 .grid8 .qa:nth-child(7) .qa__ico { background: var(--gold-soft); color: #8a6a1f; }
 .grid8 .qa:nth-child(8) .qa__ico { background: #eceff1; color: #5c6b66; }
 
+/* ---------- compact radio chips (e.g. gender at sign-up) ---------- */
+.chip-picker { display: flex; gap: 8px; }
+.chip-picker__opt { cursor: pointer; }
+.chip-picker__opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+.chip-picker__opt .chip { display: block; }
+.chip-picker__opt input:checked + .chip {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+  font-weight: 600;
+}
+.chip-picker__opt input:focus-visible + .chip { outline: 2px solid var(--green-400); }
+
+/* ---------- 2D character picker ---------- */
+.avatar-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.avatar-picker__opt { cursor: pointer; }
+.avatar-picker__opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+.avatar-picker__card {
+  display: block;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+  transition: border-color .15s;
+}
+.avatar-picker__card img { display: block; width: 100%; height: auto; }
+.avatar-picker__label {
+  display: block;
+  padding: 7px 4px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.avatar-picker__opt input:checked + .avatar-picker__card { border-color: var(--green); }
+.avatar-picker__opt input:checked + .avatar-picker__card .avatar-picker__label {
+  background: var(--green);
+  color: #fff;
+}
+.avatar-picker__opt input:focus-visible + .avatar-picker__card { outline: 2px solid var(--green-400); }
+
 /* ---------- home mascot banner ---------- */
 .mascot-card {
   position: relative;
@@ -672,6 +713,27 @@ button { font: inherit; }
   font-size: 14px;
 }
 .avatar--lg { width: 64px; height: 64px; font-size: 26px; }
+
+/* ---------- mosque detail: next-prayer + RSVP ---------- */
+.attend-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.attend-card__time { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.attend-card__name { font-size: 15px; font-weight: 700; }
+.attend-card__clock { font-size: 20px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+.attend-card__people { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.attend-card__count { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+.avatar-stack { display: flex; }
+.avatar-stack .avatar {
+  width: 30px; height: 30px; font-size: 12px;
+  border: 2px solid var(--card);
+  margin-left: -8px;
+}
+.avatar-stack .avatar:first-child { margin-left: 0; }
+.avatar--more { background: var(--green-soft); color: var(--green); }
 .post-card__author { font-size: 13px; font-weight: 600; }
 .post-card__title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
 .post-card__stats { display: flex; gap: 16px; margin-top: 10px; color: var(--muted); font-size: 12.5px; }

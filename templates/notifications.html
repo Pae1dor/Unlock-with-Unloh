@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set back_url = "/prayer-times" %}
+{% block title %}การแจ้งเตือนละหมาด — {{ app_name }}{% endblock %}
+{% block page_title %}การแจ้งเตือน{% endblock %}
+
+{% block content %}
+{% if saved %}
+<div class="notice notice--ok">บันทึกการตั้งค่าแล้ว</div>
+{% endif %}
+
+<p class="map-note" style="padding:14px 16px 0">เลือกเวลาละหมาดที่ต้องการให้แจ้งเตือน แยกเปิด/ปิดได้รายเวลา</p>
+
+<form class="section" method="post" action="/notifications">
+  <div class="list-card">
+    {% for key, name_th in prayers %}
+    <div class="toggle-row" style="border-radius:0;box-shadow:none;{% if not loop.last %}border-bottom:1px solid var(--line);{% endif %}">
+      <svg class="ico" style="color:var(--green)"><use href="#i-clock"></use></svg>
+      <div class="toggle-row__label">{{ name_th }}</div>
+      <label class="switch">
+        <input type="checkbox" name="notify_{{ key|lower }}" value="1" {% if user|attr("notify_" ~ key|lower) %}checked{% endif %}>
+        <span class="switch__track"></span>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+  <button class="btn" type="submit" style="margin-top:16px">บันทึก</button>
+</form>
+{% endblock %}

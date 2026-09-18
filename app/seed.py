@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from app.config import QR_DIR
 from app.database import SessionLocal, init_db
-from app.models import DonationCampaign, Mosque, News
+from app.models import DonationCampaign, Mosque, MosqueEvent, News
 
 NEWS_SEED = [
     {
@@ -198,6 +198,12 @@ MOSQUE_SEED = [
     },
 ]
 
+# Applied to every mosque — generic activities almost every mosque genuinely runs.
+MOSQUE_EVENT_SEED = [
+    ("ญุมอะฮ์ (ละหมาดวันศุกร์)", "ทุกวันศุกร์ เวลา 12:30 น."),
+    ("สอนอ่านอัลกุรอานสำหรับเด็ก", "ทุกวันเสาร์ เวลา 09:00 น."),
+]
+
 CAMPAIGN_SEED = [
     {
         "slug": "sattha-chon-education",
@@ -262,7 +268,7 @@ def seed() -> None:
     init_db()
     db = SessionLocal()
     now = datetime.now(timezone.utc)
-    created = {"news": 0, "mosques": 0, "campaigns": 0}
+    created = {"news": 0, "mosques": 0, "campaigns": 0, "events": 0}
 
     try:
         for item in NEWS_SEED:
@@ -282,10 +288,23 @@ def seed() -> None:
             created["news"] += 1
 
         for item in MOSQUE_SEED:
-            if db.scalar(select(Mosque).where(Mosque.name == item["name"])):
-                continue
-            db.add(Mosque(**item))
-            created["mosques"] += 1
+            mosque = db.scalar(select(Mosque).where(Mosque.name == item["name"]))
+            if mosque is None:
+                mosque = Mosque(**item)
+                db.add(mosque)
+                db.flush()  # assigns mosque.id for the events added below
+                created["mosques"] += 1
+
+            for title, schedule_text in MOSQUE_EVENT_SEED:
+                exists = db.scalar(
+                    select(MosqueEvent).where(
+                        MosqueEvent.mosque_id == mosque.id, MosqueEvent.title == title
+                    )
+                )
+                if exists:
+                    continue
+                db.add(MosqueEvent(mosque_id=mosque.id, title=title, schedule_text=schedule_text))
+                created["events"] += 1
 
         for item in CAMPAIGN_SEED:
             existing = db.scalar(
@@ -311,8 +330,8 @@ def seed() -> None:
 
     print(
         f"Seed complete — news: +{created['news']}, "
-        f"mosques: +{created['mosques']}, campaigns: +{created['campaigns']} "
-        f"(existing rows were left untouched)"
+        f"mosques: +{created['mosques']}, events: +{created['events']}, "
+        f"campaigns: +{created['campaigns']} (existing rows were left untouched)"
     )
 
 

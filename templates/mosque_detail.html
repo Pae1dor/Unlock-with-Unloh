@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% set back_url = "/mosques" %}
+{% block title %}{{ mosque.name }} — {{ app_name }}{% endblock %}
+{% block page_title %}รายละเอียดมัสยิด{% endblock %}
+
+{% block content %}
+<div class="surah-head" style="text-align:left">
+  <div class="surah-head__th" style="font-size:19px">{{ mosque.name }}</div>
+  <div class="surah-head__meta">
+    {{ mosque.address }}
+    <span id="single-dist" data-lat="{{ mosque.lat }}" data-lng="{{ mosque.lng }}"></span>
+  </div>
+  {% if mosque.phone %}<div class="surah-head__meta">โทร. {{ mosque.phone }}</div>{% endif %}
+</div>
+
+<div class="section">
+  {% if next_item %}
+  <div class="attend-card">
+    <div class="attend-card__time">
+      <span class="attend-card__name">{{ next_item.name_th }}</span>
+      <span class="attend-card__clock">{{ next_item.time }}</span>
+      <span class="badge">เวลาถัดไป</span>
+    </div>
+
+    {% if attendee_count > 0 %}
+    <div class="attend-card__people">
+      <div class="avatar-stack">
+        {% for a in attendees %}
+        <span class="avatar" style="z-index:{{ 10 - loop.index0 }}">{{ a.initial }}</span>
+        {% endfor %}
+        {% if attendee_extra > 0 %}<span class="avatar avatar--more">+{{ attendee_extra }}</span>{% endif %}
+      </div>
+      <span class="attend-card__count">{{ attendee_count }} คนจะไปละหมาดที่นี่</span>
+    </div>
+    {% else %}
+    <p class="attend-card__count">ยังไม่มีใครกดเข้าร่วม — เป็นคนแรกสิ</p>
+    {% endif %}
+
+    <form method="post" action="/mosques/{{ mosque.id }}/attend">
+      {% if user %}
+      <button class="btn {% if is_attending %}btn--ghost{% endif %}" type="submit">
+        {% if is_attending %}ยกเลิกการเข้าร่วม{% else %}ฉันไปด้วย{% endif %}
+      </button>
+      {% else %}
+      <a class="btn" href="/login?next=/mosques/{{ mosque.id }}">เข้าสู่ระบบเพื่อกดเข้าร่วม</a>
+      {% endif %}
+    </form>
+  </div>
+  {% else %}
+  <div class="notice notice--error">{{ prayer.error or "ไม่พบข้อมูลเวลาละหมาดถัดไป" }}</div>
+  {% endif %}
+</div>
+
+{% if prayer.ok %}
+<div class="section">
+  <div class="section__head"><h2 class="section__title">เวลาละหมาดวันนี้</h2></div>
+  <div class="prayer-card">
+    <div class="prayer-list">
+      {% for item in prayer.timings %}
+      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %}">
+        <span class="prayer-list__name">{{ item.name_th }}</span>
+        <span class="prayer-list__time">{{ item.time }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="section">
+  <div class="section__head"><h2 class="section__title">กิจกรรมที่กำลังจะมาถึง</h2></div>
+  <div class="list-card">
+    {% for event in events %}
+    <div class="list-row" style="align-items:flex-start">
+      <svg class="ico" style="color:var(--green);margin-top:2px"><use href="#i-mosque"></use></svg>
+      <span class="list-row__title" style="white-space:normal">
+        {{ event.title }}
+        <span class="row__sub" style="display:block;font-weight:400">{{ event.schedule_text }}</span>
+      </span>
+    </div>
+    {% else %}
+    <p class="empty">ยังไม่มีกิจกรรมของมัสยิดนี้</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div class="section">
+  <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination={{ mosque.lat }},{{ mosque.lng }}"
+     target="_blank" rel="noopener">
+    <svg class="ico" style="vertical-align:-4px;margin-right:6px"><use href="#i-map-pin"></use></svg>นำทางไปมัสยิดนี้
+  </a>
+  {% if mosque.phone %}
+  <a class="btn btn--ghost" href="tel:{{ mosque.phone }}">
+    <svg class="ico" style="vertical-align:-4px;margin-right:6px"><use href="#i-phone"></use></svg>โทรหามัสยิด
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  (function () {
+    var mapEl = document.getElementById('map');
+    if (!mapEl || typeof L === 'undefined') return;
+    var lat = {{ mosque.lat }};
+    var lng = {{ mosque.lng }};
+    var map = L.map('map').setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    L.marker([lat, lng]).addTo(map).bindPopup({{ mosque.name|tojson }}).openPopup();
+  })();
+
+  // Straight-line distance from the visitor to this one mosque, next to the address.
+  (function () {
+    var el = document.getElementById('single-dist');
+    if (!el || !navigator.geolocation) return;
+    var lat2 = parseFloat(el.getAttribute('data-lat'));
+    var lng2 = parseFloat(el.getAttribute('data-lng'));
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      var toRad = function (d) { return (d * Math.PI) / 180; };
+      var R = 6371;
+      var dLat = toRad(lat2 - pos.coords.latitude);
+      var dLon = toRad(lng2 - pos.coords.longitude);
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(pos.coords.latitude)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      var km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      el.textContent = ' · ' + km.toFixed(1) + ' กม.';
+    });
+  })();
+</script>
+{% endblock %}

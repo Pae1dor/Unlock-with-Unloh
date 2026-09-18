@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1788789083599,
+  "lastScanned": 1789736035706,
   "projectRoot": "c:\\Users\\hp\\OneDrive\\Desktop\\Projectปัญยาอ่อน\\Unlock with Unloh",
   "techStack": {
     "languages": [
@@ -47,8 +47,8 @@
     "app": {
       "path": "app",
       "purpose": "Application code",
-      "fileCount": 10,
-      "lastAccessed": 1788789083351,
+      "fileCount": 11,
+      "lastAccessed": 1789736035038,
       "keyFiles": [
         "auth.py",
         "config.py",
@@ -61,31 +61,20 @@
       "path": "static",
       "purpose": "Static files",
       "fileCount": 0,
-      "lastAccessed": 1788789083353,
+      "lastAccessed": 1789736035096,
       "keyFiles": []
     },
     "templates": {
       "path": "templates",
       "purpose": null,
-      "fileCount": 19,
-      "lastAccessed": 1788789083354,
+      "fileCount": 22,
+      "lastAccessed": 1789736035273,
       "keyFiles": [
         "base.html",
         "community.html",
         "community_detail.html",
         "community_new.html",
         "donation.html"
-      ]
-    },
-    "app\\services": {
-      "path": "app\\services",
-      "purpose": "Business logic services",
-      "fileCount": 3,
-      "lastAccessed": 1788789083366,
-      "keyFiles": [
-        "aladhan.py",
-        "alquran.py",
-        "__init__.py"
       ]
     }
   },

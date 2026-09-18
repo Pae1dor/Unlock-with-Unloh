@@ -10,7 +10,7 @@ from app.config import CITY_COOKIE
 from app.database import get_db
 from app.deps import require_user
 from app.models import Donation, ForumPost, User
-from app.templating import templates
+from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["profile"])
 
@@ -41,6 +41,7 @@ def update_profile(
     full_name: str = Form(...),
     city: str = Form(""),
     phone: str = Form(""),
+    avatar_style: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
@@ -48,6 +49,8 @@ def update_profile(
         user.full_name = full_name.strip()
     user.city = city.strip() or user.city
     user.phone = phone.strip() or None
+    if avatar_style in AVATAR_STYLE_KEYS:
+        user.avatar_style = avatar_style
     db.commit()
 
     response = RedirectResponse("/profile?saved=1", status_code=303)

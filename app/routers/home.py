@@ -1,4 +1,4 @@
-"""หน้าแรก — greeting, dates, prayer strip and the 8 quick-action grid."""
+"""หน้าแรก — greeting, dates, prayer strip and the quick-action grid."""
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -20,10 +20,6 @@ QUICK_ACTIONS = [
     {"label": "เวลาละหมาด", "url": "/prayer-times", "icon": "clock"},
     {"label": "บริจาค", "url": "/donation", "icon": "heart"},
     {"label": "ค้นหามัสยิด", "url": "/mosques", "icon": "map-pin"},
-    {"label": "ข่าวสาร", "url": "/news", "icon": "newspaper"},
-    {"label": "ภาษาอิหม่าม", "url": "/community", "icon": "users"},
-    {"label": "อาลิม", "url": "/news?category=article", "icon": "mosque"},
-    {"label": "ทั้งหมด", "url": "/community", "icon": "grid"},
 ]
 
 

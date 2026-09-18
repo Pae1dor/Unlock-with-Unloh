@@ -37,21 +37,10 @@
 {% endif %}
 
 <div class="section">
-  <div class="toggle-row">
-    <svg class="ico" style="color:var(--green)"><use href="#i-bell"></use></svg>
-    <div class="toggle-row__label">
-      แจ้งเตือนละหมาด
-      <span class="prayer-row__sub" id="toggle-status">
-        {% if not user %}เข้าสู่ระบบเพื่อบันทึกการตั้งค่า{% else %}บันทึกไว้ในบัญชีของคุณ{% endif %}
-      </span>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="prayer-toggle"
-             {% if notifications_enabled %}checked{% endif %}
-             {% if not user %}disabled{% endif %}>
-      <span class="switch__track"></span>
-    </label>
-  </div>
+  <a class="link-row" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}">
+    <svg class="ico"><use href="#i-bell"></use></svg>
+    <span>ตั้งค่าการแจ้งเตือนละหมาด</span>
+  </a>
 </div>
 {% endblock %}
 

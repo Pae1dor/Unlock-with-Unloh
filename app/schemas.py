@@ -2,14 +2,6 @@
 from pydantic import BaseModel, Field
 
 
-class PrayerNotificationIn(BaseModel):
-    enabled: bool
-
-
-class PrayerNotificationOut(BaseModel):
-    enabled: bool
-
-
 class LikeOut(BaseModel):
     liked: bool
     like_count: int

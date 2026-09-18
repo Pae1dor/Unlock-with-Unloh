@@ -9,7 +9,7 @@ from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, COOKIE_NAME
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
-from app.templating import templates
+from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["auth"])
 
@@ -49,9 +49,16 @@ def register_submit(
     email: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
+    avatar_style: str = Form("male"),
     db: Session = Depends(get_db),
 ):
-    form = {"full_name": full_name.strip(), "email": email.strip().lower()}
+    if avatar_style not in AVATAR_STYLE_KEYS:
+        avatar_style = "male"
+    form = {
+        "full_name": full_name.strip(),
+        "email": email.strip().lower(),
+        "avatar_style": avatar_style,
+    }
 
     def fail(message: str):
         return templates.TemplateResponse(
@@ -78,6 +85,7 @@ def register_submit(
         full_name=form["full_name"],
         email=form["email"],
         hashed_password=hash_password(password),
+        avatar_style=form["avatar_style"],
     )
     db.add(user)
     db.commit()

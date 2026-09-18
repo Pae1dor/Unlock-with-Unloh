@@ -1,7 +1,7 @@
 """Shared FastAPI dependencies: current user from the httpOnly cookie, active city."""
 from urllib.parse import unquote
 
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -33,6 +33,16 @@ def require_user(request: Request, user: User | None = Depends(get_current_user)
     """Same as get_current_user but bounces anonymous visitors to /login."""
     if user is None:
         raise LoginRequired(next_url=str(request.url.path))
+    return user
+
+
+def require_admin(request: Request, user: User | None = Depends(get_current_user)) -> User:
+    """Same as require_user but also demands is_admin — otherwise a plain 404 (the
+    route stays invisible to non-admins rather than revealing it via a 403)."""
+    if user is None:
+        raise LoginRequired(next_url=str(request.url.path))
+    if not user.is_admin:
+        raise HTTPException(status_code=404)
     return user
 
 

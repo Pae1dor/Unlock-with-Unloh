@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" role="img" aria-label="ตัวการ์ตูนผู้ชายต้อนรับหน้าแรก">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef7f1"/>
+      <stop offset="1" stop-color="#dcece2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="300" height="340" fill="url(#sky)"/>
+
+  <circle cx="240" cy="55" r="38" fill="#ffe9b8" opacity=".35"/>
+  <circle cx="240" cy="55" r="22" fill="#ffdd94"/>
+
+  <rect x="0" y="298" width="300" height="42" fill="#d7e8dc"/>
+  <ellipse cx="150" cy="316" rx="78" ry="12" fill="#1B5E3A" opacity=".08"/>
+
+  <!-- palm: left -->
+  <rect x="34" y="230" width="9" height="80" rx="4" fill="#8a9a6e"/>
+  <g fill="#6fae7c">
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(-60 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(-30 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(30 38 225)"/>
+    <ellipse cx="38" cy="225" rx="26" ry="8" transform="rotate(60 38 225)"/>
+  </g>
+
+  <!-- palm: right -->
+  <rect x="257" y="230" width="9" height="80" rx="4" fill="#8a9a6e"/>
+  <g fill="#6fae7c">
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(-60 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(-30 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(30 262 225)"/>
+    <ellipse cx="262" cy="225" rx="26" ry="8" transform="rotate(60 262 225)"/>
+  </g>
+
+  <!-- mosque -->
+  <g fill="#a9cdb7">
+    <rect x="68" y="150" width="12" height="110" rx="5"/>
+    <circle cx="74" cy="148" r="9"/>
+    <rect x="72" y="132" width="4" height="18"/>
+    <rect x="220" y="150" width="12" height="110" rx="5"/>
+    <circle cx="226" cy="148" r="9"/>
+    <rect x="224" y="132" width="4" height="18"/>
+    <rect x="108" y="185" width="84" height="75"/>
+    <circle cx="150" cy="185" r="36"/>
+    <rect x="147" y="140" width="6" height="16"/>
+    <circle cx="150" cy="138" r="5"/>
+  </g>
+
+  <!-- character: thobe (เสื้อโต๊ป) -->
+  <path d="M120,236 L180,236 L200,308 Q200,314 194,314 L106,314 Q100,314 100,308 Z" fill="#f4efe1"/>
+  <path d="M150,236 L150,314" stroke="#e2dccb" stroke-width="2"/>
+  <path d="M138,236 q12,14 24,0" fill="#e2dccb"/>
+
+  <!-- beard: a slightly larger circle offset down, so the face circle drawn on
+       top of it leaves a clean jawline crescent showing -->
+  <circle cx="150" cy="210" r="28" fill="#3b2f26"/>
+
+  <!-- face -->
+  <circle cx="150" cy="200" r="27" fill="#f4c9a0"/>
+
+  <!-- kufi cap (กะปิเยาะฮ์) — sits on the crown, does not cover the face -->
+  <ellipse cx="150" cy="172" rx="27" ry="12" fill="#1B5E3A"/>
+  <rect x="123" y="170" width="54" height="7" rx="3.5" fill="#164e30"/>
+
+  <circle cx="133" cy="206" r="4" fill="#f2a9a0" opacity=".45"/>
+  <circle cx="167" cy="206" r="4" fill="#f2a9a0" opacity=".45"/>
+
+  <path d="M138,197 q4,5 8,0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M154,197 q4,5 8,0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M142,209 q8,6 16,0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+</svg>

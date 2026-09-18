@@ -2,10 +2,11 @@
 
 Only portable column types are used so the same models run on PostgreSQL and SQLite.
 """
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -33,7 +34,16 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     city: Mapped[str] = mapped_column(String(120), default="กรุงเทพมหานคร", nullable=False)
     phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    prayer_notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # 2D character shown on the home screen: male | female | symbol.
+    # "symbol" is a non-figurative option for those who avoid depicting living beings.
+    avatar_style: Mapped[str] = mapped_column(String(20), default="symbol", nullable=False)
+    # Per-prayer notification toggles (P0 spec: "แยกรายเวลาได้").
+    notify_fajr: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    notify_dhuhr: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    notify_asr: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    notify_maghrib: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    notify_isha: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     posts: Mapped[list["ForumPost"]] = relationship(back_populates="author", cascade="all, delete-orphan")
@@ -129,6 +139,42 @@ class Mosque(Base):
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    events: Mapped[list["MosqueEvent"]] = relationship(back_populates="mosque", cascade="all, delete-orphan")
+
+
+class MosqueEvent(Base):
+    """A recurring/one-off mosque activity (ญุมอะฮ์, สอนกุรอาน, บรรยาย, อิฟฏอร ฯลฯ)."""
+
+    __tablename__ = "mosque_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mosque_id: Mapped[int] = mapped_column(ForeignKey("mosques.id", ondelete="CASCADE"), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    # freeform, e.g. "ทุกวันศุกร์ 12:30 น." — no recurrence engine needed for this scale
+    schedule_text: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    mosque: Mapped["Mosque"] = relationship(back_populates="events")
+
+
+class MosqueAttendance(Base):
+    """'ฉันไปด้วย' RSVP — one row per user, per mosque, per prayer, per day."""
+
+    __tablename__ = "mosque_attendance"
+    __table_args__ = (
+        UniqueConstraint("mosque_id", "user_id", "prayer_key", "attend_date", name="uq_attendance_once"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mosque_id: Mapped[int] = mapped_column(ForeignKey("mosques.id", ondelete="CASCADE"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    prayer_key: Mapped[str] = mapped_column(String(20), nullable=False)  # Fajr | Dhuhr | Asr | Maghrib | Isha
+    attend_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    mosque: Mapped["Mosque"] = relationship()
+    user: Mapped["User"] = relationship()
 
 
 class DonationCampaign(Base):

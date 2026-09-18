@@ -17,6 +17,15 @@ NEWS_CATEGORIES = [
 ]
 NEWS_CATEGORY_LABELS = {key: label for key, label in NEWS_CATEGORIES}
 
+# 2D character options (spec §9): both genders from day one, plus a
+# non-figurative option for those who avoid depicting living beings.
+AVATAR_STYLES = [
+    ("male", "ชาย"),
+    ("female", "หญิง"),
+    ("symbol", "สัญลักษณ์"),
+]
+AVATAR_STYLE_KEYS = {key for key, _ in AVATAR_STYLES}
+
 FORUM_CATEGORIES = [
     ("qa", "ถาม-ตอบ"),
     ("article", "บทความ"),
@@ -61,4 +70,5 @@ templates.env.globals["news_categories"] = NEWS_CATEGORIES
 templates.env.globals["news_category_labels"] = NEWS_CATEGORY_LABELS
 templates.env.globals["forum_categories"] = FORUM_CATEGORIES
 templates.env.globals["forum_category_labels"] = FORUM_CATEGORY_LABELS
+templates.env.globals["avatar_styles"] = AVATAR_STYLES
 templates.env.globals["app_name"] = "ประชาชนเพื่อพี่น้องอิสลาม"

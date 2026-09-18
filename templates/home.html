@@ -8,9 +8,9 @@
       <p class="hero__salam">อัสลามุอะลัยกุม</p>
       <p class="hero__greeting">{{ greeting }}{% if user %}, {{ user.full_name }}{% endif %}</p>
     </div>
-    <button class="hero__bell" type="button" aria-label="การแจ้งเตือน">
+    <a class="hero__bell" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
       <svg class="ico"><use href="#i-bell"></use></svg>
-    </button>
+    </a>
   </div>
   <div class="hero__dates">
     <span>{{ prayer.gregorian }}</span>
@@ -40,7 +40,8 @@
 
 <section class="section">
   <div class="mascot-card">
-    <img class="mascot-card__img" src="/static/img/mascot-home.svg" alt="ยินดีต้อนรับสู่ประชาชนเพื่อพี่น้องอิสลาม" width="300" height="340">
+    <img class="mascot-card__img" src="/static/img/mascot-{{ user.avatar_style if user else 'symbol' }}.svg"
+         alt="ยินดีต้อนรับสู่ประชาชนเพื่อพี่น้องอิสลาม" width="300" height="340">
     <a class="mascot-card__shortcut mascot-card__shortcut--left" href="/mosques">
       <svg class="ico"><use href="#i-map-pin"></use></svg>
       <span>ค้นหามัสยิด</span>

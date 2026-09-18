@@ -29,6 +29,18 @@
     <label for="confirm_password">ยืนยันรหัสผ่าน</label>
     <input type="password" id="confirm_password" name="confirm_password" required minlength="6" autocomplete="new-password">
   </div>
+  <div class="field">
+    <label>เพศ</label>
+    <div class="chip-picker">
+      {% for value, label in avatar_styles if value != 'symbol' %}
+      <label class="chip-picker__opt">
+        <input type="radio" name="avatar_style" value="{{ value }}"
+               {% if form.get('avatar_style', 'male') == value %}checked{% endif %}>
+        <span class="chip">{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
   <button class="btn" type="submit">สมัครสมาชิก</button>
   <p class="form-foot">มีบัญชีอยู่แล้ว? <a href="/login">เข้าสู่ระบบ</a></p>
 </form>

@@ -26,6 +26,10 @@
     <svg class="ico"><use href="#i-users"></use></svg>
     <span>ชุมชน</span>
   </a>
+  <a class="link-row" href="/notifications">
+    <svg class="ico"><use href="#i-bell"></use></svg>
+    <span>การแจ้งเตือนละหมาด</span>
+  </a>
 </div>
 
 <div class="section">
@@ -43,6 +47,21 @@
       <div class="field">
         <label for="phone">เบอร์โทรศัพท์</label>
         <input type="tel" id="phone" name="phone" maxlength="40" value="{{ user.phone or '' }}">
+      </div>
+      <div class="field">
+        <label>ตัวละครของคุณ</label>
+        <div class="avatar-picker">
+          {% for value, label in avatar_styles %}
+          <label class="avatar-picker__opt">
+            <input type="radio" name="avatar_style" value="{{ value }}"
+                   {% if user.avatar_style == value %}checked{% endif %}>
+            <span class="avatar-picker__card">
+              <img src="/static/img/mascot-{{ value }}.svg" alt="{{ label }}" width="300" height="340">
+              <span class="avatar-picker__label">{{ label }}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
       </div>
       <button class="btn" type="submit">บันทึกข้อมูล</button>
     </form>
