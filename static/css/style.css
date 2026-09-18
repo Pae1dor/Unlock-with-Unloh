@@ -819,7 +819,12 @@ button { font: inherit; }
 .field textarea { min-height: 130px; resize: vertical; }
 
 .btn {
-  display: block;
+  /* flex (not block) so an inline <svg class="ico"> sits beside the label
+     instead of taking its own line — .ico is display:block */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
   padding: 12px;
   border: 0;
