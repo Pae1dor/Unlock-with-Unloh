@@ -794,8 +794,51 @@ button { font: inherit; }
 
 /* The mosque finder toggles `hidden` on elements whose class sets `display`, which would
    otherwise win over the browser's [hidden] rule (scoped here so other pages are unaffected). */
-#mosque-list [hidden], .suggest[hidden], .geo-prompt[hidden], .status-retry[hidden] { display: none; }
+#mosque-list [hidden], .suggest[hidden], .geo-prompt[hidden], .status-retry[hidden], .checkin-toast[hidden] { display: none; }
 #mosque-list > [hidden] + .list-row { border-top: 0; }
+
+/* list row: "show on map" area on top, check-in button under the name */
+.mosque-row { flex-direction: column; align-items: stretch; gap: 8px; }
+.mosque-row__main { display: flex; align-items: center; gap: 12px; cursor: pointer; border-radius: 8px; }
+.mosque-row__main:focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+.mosque-row > .checkin-btn { margin-left: 32px; }   /* line up with the name, past the 20px icon + 12px gap */
+
+.checkin-btn {
+  align-self: flex-start;
+  max-width: calc(100% - 32px);
+  padding: 6px 14px;
+  border: 1px solid var(--green);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--green);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+.checkin-btn--open { background: var(--green); color: #fff; }
+.checkin-btn--done { background: var(--green-soft); border-color: transparent; color: var(--green); cursor: default; }
+.checkin-btn--far, .checkin-btn--closed, .checkin-btn--elsewhere,
+.checkin-btn--loading, .checkin-btn--busy {
+  background: #f1f0ec;
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: default;
+}
+.mosque-popup .checkin-btn { display: block; width: 100%; max-width: none; margin-top: 8px; text-align: center; }
+
+.checkin-toast {
+  margin: 10px 16px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.checkin-toast.is-error { background: #fbeae6; color: var(--danger); }
 
 .mosque-search { position: relative; margin: 14px 16px 0; }
 .mosque-search .searchbox { margin: 0; }
