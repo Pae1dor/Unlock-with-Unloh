@@ -1,7 +1,7 @@
 {
   "tool_name": "PowerShell",
-  "tool_input_preview": "{\"command\":\"Set-Location \\\"C:\\\\Users\\\\hp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hp-OneDrive-Desktop-Project----------Unlock-with-Unloh\\\\2fb19745-94eb-4184-835f-e03f79ce640d\\\\scratchpad\\\"\\nnode test_m...",
-  "error": "Exit code 1\nPASS — A granted: no custom popup (permission already given)\nPASS — A map moved to the visitor (bbox centred on 13.68,100.48) :: centre 13.6800,100.4800\nPASS — A zoom 14 (412 px wide ≈ 0.0354° of longitude) :: span 0.0354\nPASS — A browser talks to our backend only (0 direct Overpass calls) :: 2 /api/mosques/nearby, 0 direct\nPASS — A zoom-14 view has no mosques -> ไม่พบมัสยิดในบริเวณนี้ :: ไม่พบมัสยิดในบริเวณนี้\n      ลองใหม่\n   stale note visible after zoom-out: true\nPASS — A rows lo...",
-  "timestamp": "2026-09-25T14:08:53.203Z",
+  "tool_input_preview": "{\"command\":\"$env:SERVER_LOG = \\\"$env:TEMP\\\\dev9990c.log\\\"\\nSet-Location \\\"C:\\\\Users\\\\hp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hp-OneDrive-Desktop-Project----------Unlock-with-Unloh\\\\2fb19745-94eb-41...",
+  "error": "Exit code 1\nPASS — A near mode: exactly 10 nearest mosques :: 10 rows\r\nPASS — A asked /api/mosques/nearest (not viewport) :: nearby > nearest\r\nPASS — A markers == rows (same names)\r\nPASS — A distances = haversine (±1 m), nearest first, ม./กม. format :: มัสยิดฮัสสละฟียฮ์ 2.8 กม. | มัสยิด (ไม่มีชื่อ) 2.9 กม. | มัสยิดดาริสสลาม 3.3 กม. … 6.0 กม.\r\nPASS — A fitBounds: visitor + all 10 visible on the map :: {\"markers\":10,\"markersIn\":10,\"userIn\":true}\r\nPASS — A row tap pans + opens popup but stays in ne...",
+  "timestamp": "2026-09-25T15:37:48.257Z",
   "retry_count": 1
 }
