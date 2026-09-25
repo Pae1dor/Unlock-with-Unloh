@@ -27,7 +27,9 @@ from app.services.ratelimit import overpass_limiter
 
 TILE_DEG = 0.05                 # ~5.5 km
 CACHE_TTL = 24 * 3600           # seconds
-MAX_TILES = 64                  # the finder only asks at zoom >= 12, which is ~20 tiles on a phone
+# The finder only asks at zoom >= 10: on its ~430 x 230 px map that is up to ~0.6 x 0.35
+# degrees, i.e. ~13 x 8 = 104 tiles. Leave headroom; anything bigger is rejected.
+MAX_TILES = 160
 MIRRORS = [
     "https://overpass-api.de/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
@@ -113,7 +115,7 @@ def _store(key: str, fetched_at: float, mosques: list[dict]) -> None:
 
 
 def check_area(s: float, w: float, n: float, e: float) -> None:
-    """Reject areas bigger than the finder ever asks for (it only loads at zoom >= 12)."""
+    """Reject areas bigger than the finder ever asks for (it only loads at zoom >= 10)."""
     if len(_tiles_for(s, w, n, e)) > MAX_TILES:
         raise BBoxError("area too large; zoom in")
 

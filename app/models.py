@@ -177,6 +177,31 @@ class MosqueAttendance(Base):
     user: Mapped["User"] = relationship()
 
 
+class MosqueCheckin(Base):
+    """Location-verified check-in at an OpenStreetMap mosque (see app/services/checkin.py).
+
+    At most one per user per prayer per day, across all mosques. The visitor's coordinates
+    are only used to verify the distance and are never stored.
+    """
+
+    __tablename__ = "mosque_checkins"
+    __table_args__ = (
+        UniqueConstraint("user_id", "prayer_key", "prayer_date", name="uq_checkin_once_per_prayer"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    osm_id: Mapped[str] = mapped_column(String(32), index=True, nullable=False)  # "node/123", "way/456"
+    # name at check-in time, so history still reads right if the OSM name changes later
+    mosque_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    prayer_key: Mapped[str] = mapped_column(String(20), nullable=False)  # Fajr | Dhuhr | Asr | Maghrib | Isha
+    # the day the prayer belongs to (an Isha check-in after midnight counts for the previous day)
+    prayer_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    user: Mapped["User"] = relationship()
+
+
 class DonationCampaign(Base):
     __tablename__ = "donation_campaigns"
 

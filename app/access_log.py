@@ -1,12 +1,18 @@
 """Keep visitors' locations out of the server's access log.
 
-The mosque finder's requests carry where the visitor is (map bbox, GPS lat/lng) or what
-place they searched for in the query string. uvicorn logs every request line verbatim, so
-for these paths the query string is replaced with "[redacted]".
+The mosque finder's requests carry where the visitor is (map bbox, GPS lat/lng), what
+place they searched for, or which mosques they are looking at in the query string.
+uvicorn logs every request line verbatim, so for these paths the query string is replaced
+with "[redacted]". (POST /api/checkins sends its coordinates in the body, which is never logged.)
 """
 import logging
 
-REDACTED_PATHS = frozenset({"/api/mosques/nearby", "/api/mosques/nearest", "/api/geocode"})
+REDACTED_PATHS = frozenset({
+    "/api/mosques/nearby",
+    "/api/mosques/nearest",
+    "/api/geocode",
+    "/api/checkins/status",
+})
 
 
 class RedactLocationQuery(logging.Filter):

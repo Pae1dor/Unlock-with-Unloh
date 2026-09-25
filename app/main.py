@@ -12,6 +12,7 @@ from app.database import init_db
 from app.deps import LoginRequired
 from app.routers import (
     auth as auth_router,
+    checkins,
     community,
     donation,
     home,
@@ -83,6 +84,7 @@ app.include_router(prayer.router)
 app.include_router(quran.router)
 app.include_router(donation.router)
 app.include_router(mosques.router)
+app.include_router(checkins.router)
 app.include_router(news.router)
 app.include_router(community.router)
 app.include_router(profile.router)
