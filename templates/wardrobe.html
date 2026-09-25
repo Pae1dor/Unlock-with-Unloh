@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}เปลี่ยนชุด — {{ app_name }}{% endblock %}
+{% block page_title %}เปลี่ยนชุด{% endblock %}
+
+{% block content %}
+{% if saved %}<div class="notice notice--ok">เปลี่ยนชุดเรียบร้อยแล้ว</div>{% endif %}
+
+{% set current = user.outfit %}
+<div class="stage">
+  <img class="stage__img" id="outfit-preview" src="{{ user.character_image }}" alt="ตัวละครของคุณ">
+</div>
+<div class="stage__caption">
+  <span id="outfit-name">{{ current.name if current else 'ตัวการ์ตูนเริ่มต้น' }}</span>
+  <span class="badge badge--limited" id="outfit-badge" {% if not current or current.rarity != 'limited' %}hidden{% endif %}>ลิมิเต็ด</span>
+</div>
+
+{% if outfits %}
+<form class="section" method="post" action="/profile/outfit">
+  <div class="outfit-grid">
+    <label class="outfit-opt">
+      <input type="radio" name="outfit_key" value="" data-image="/static/img/mascot-{{ user.avatar_style }}.svg"
+             data-name="ตัวการ์ตูนเริ่มต้น" data-rarity="common" {% if not current %}checked{% endif %}>
+      <span class="outfit-card">
+        <span class="outfit-card__thumb"><img src="/static/img/mascot-{{ user.avatar_style }}.svg" alt="" loading="lazy"></span>
+        <span class="outfit-card__name">ตัวการ์ตูนเริ่มต้น</span>
+      </span>
+    </label>
+    {% for o in outfits %}
+    <label class="outfit-opt">
+      <input type="radio" name="outfit_key" value="{{ o.key }}" data-image="{{ o.image }}"
+             data-name="{{ o.name }}" data-rarity="{{ o.rarity }}" {% if current and current.key == o.key %}checked{% endif %}>
+      <span class="outfit-card outfit-card--{{ o.rarity }}">
+        <span class="outfit-card__thumb"><img src="{{ o.image }}" alt="" loading="lazy"></span>
+        <span class="outfit-card__name">{{ o.name }}</span>
+        <span class="outfit-card__rarity">{{ rarity_labels[o.rarity] }}</span>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+  <button class="btn" type="submit" style="margin-top:16px">
+    <svg class="ico"><use href="#i-user"></use></svg>ใส่ชุดนี้
+  </button>
+</form>
+{% else %}
+<div class="empty">ยังไม่มีชุดสำหรับตัวละครนี้ เร็วๆ นี้!</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Try an outfit on in the preview before saving it.
+  (function () {
+    var preview = document.getElementById('outfit-preview');
+    var name = document.getElementById('outfit-name');
+    var badge = document.getElementById('outfit-badge');
+    document.querySelectorAll('input[name=outfit_key]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        preview.classList.remove('is-swapping');
+        void preview.offsetWidth; // restart the animation
+        preview.classList.add('is-swapping');
+        preview.src = input.dataset.image;
+        name.textContent = input.dataset.name;
+        badge.hidden = input.dataset.rarity !== 'limited';
+      });
+    });
+  })();
+</script>
+{% endblock %}

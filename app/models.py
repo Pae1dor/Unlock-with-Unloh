@@ -50,10 +50,42 @@ class User(Base):
     comments: Mapped[list["ForumComment"]] = relationship(back_populates="author", cascade="all, delete-orphan")
     likes: Mapped[list["ForumLike"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     donations: Mapped[list["Donation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    outfit_choice: Mapped["UserOutfit | None"] = relationship(cascade="all, delete-orphan")
 
     @property
     def initial(self) -> str:
         return (self.full_name or self.email or "?").strip()[:1].upper()
+
+    @property
+    def outfit(self) -> dict | None:
+        """The outfit the character wears, or None for the plain 2D mascot."""
+        from app.outfits import OUTFITS
+
+        if self.outfit_choice is None:
+            return None
+        outfit = OUTFITS.get(self.outfit_choice.outfit_key)
+        # An outfit only fits the character it was drawn for.
+        if outfit is None or outfit["gender"] != self.avatar_style:
+            return None
+        return {"key": self.outfit_choice.outfit_key, **outfit}
+
+    @property
+    def character_image(self) -> str:
+        outfit = self.outfit
+        return outfit["image"] if outfit else f"/static/img/mascot-{self.avatar_style}.svg"
+
+
+class UserOutfit(Base):
+    """Outfit currently worn by a user's character (one row per user; key from app/outfits.py).
+
+    Its own table so it is created on startup by create_all — no migration of `users` needed.
+    """
+
+    __tablename__ = "user_outfits"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    outfit_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 
 
 class News(Base):

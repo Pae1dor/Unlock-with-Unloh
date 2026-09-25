@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi.templating import Jinja2Templates
 
-from app.config import TEMPLATES_DIR, TIMEZONE
+from app.config import APP_VERSION, TEMPLATES_DIR, TIMEZONE
 from app.services.aladhan import THAI_MONTHS
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -71,4 +71,5 @@ templates.env.globals["news_category_labels"] = NEWS_CATEGORY_LABELS
 templates.env.globals["forum_categories"] = FORUM_CATEGORIES
 templates.env.globals["forum_category_labels"] = FORUM_CATEGORY_LABELS
 templates.env.globals["avatar_styles"] = AVATAR_STYLES
+templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["app_name"] = "ประชาชนเพื่อพี่น้องอิสลาม"

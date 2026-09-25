@@ -10,6 +10,7 @@
         return;
       }
       likeBtn.disabled = true;
+      likeBtn.classList.add('is-loading');
       fetch('/api/community/' + likeBtn.dataset.postId + '/like', { method: 'POST' })
         .then(function (res) {
           if (!res.ok) throw new Error('like failed');
@@ -20,7 +21,10 @@
           if (likeCount) likeCount.textContent = data.like_count;
         })
         .catch(function () { /* leave the button as it was */ })
-        .then(function () { likeBtn.disabled = false; });
+        .then(function () {
+          likeBtn.disabled = false;
+          likeBtn.classList.remove('is-loading');
+        });
     });
   }
 
@@ -44,6 +48,8 @@
     if (!content) return;
 
     if (errorEl) errorEl.hidden = true;
+    var submitBtn = form.querySelector('[type=submit]');
+    if (submitBtn && window.uiSetLoading) window.uiSetLoading(submitBtn, true);
 
     fetch('/api/community/' + form.dataset.postId + '/comments', {
       method: 'POST',
@@ -75,6 +81,9 @@
           errorEl.textContent = 'ส่งความคิดเห็นไม่สำเร็จ กรุณาลองใหม่';
           errorEl.hidden = false;
         }
+      })
+      .then(function () {
+        if (submitBtn && window.uiSetLoading) window.uiSetLoading(submitBtn, false);
       });
   });
 })();

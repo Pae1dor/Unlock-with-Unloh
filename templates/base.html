@@ -12,6 +12,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="พี่น้องอิสลาม">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300..700&display=swap">
   <link rel="stylesheet" href="/static/css/style.css">
   {% block head %}{% endblock %}
 </head>
@@ -34,6 +37,8 @@
     <main class="screen">
       {% block content %}{% endblock %}
     </main>
+
+    <div class="version-tag">Unlock with Unloh betatest ver {{ app_version }}</div>
 
     <nav class="tabbar" aria-label="เมนูหลัก">
       <a class="tab {% if active == 'home' %}is-active{% endif %}" href="/">
@@ -62,6 +67,7 @@
     </nav>
   </div>
 
+  <script src="/static/js/ui.js"></script>
   {% block scripts %}{% endblock %}
   <script>
     // Browsers only allow service workers on https (or localhost); elsewhere this is skipped.
