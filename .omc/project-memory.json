@@ -78,6 +78,25 @@
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": ".env",
+      "accessCount": 1,
+      "lastAccessed": 1789736996306,
+      "type": "file"
+    },
+    {
+      "path": "static/css/style.css",
+      "accessCount": 1,
+      "lastAccessed": 1789737595131,
+      "type": "file"
+    },
+    {
+      "path": "templates/mosque_detail.html",
+      "accessCount": 1,
+      "lastAccessed": 1789737606486,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }
