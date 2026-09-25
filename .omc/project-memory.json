@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1789736035706,
+  "lastScanned": 1790337610341,
   "projectRoot": "c:\\Users\\hp\\OneDrive\\Desktop\\Projectปัญยาอ่อน\\Unlock with Unloh",
   "techStack": {
     "languages": [
@@ -48,7 +48,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 11,
-      "lastAccessed": 1789736035038,
+      "lastAccessed": 1790337610191,
       "keyFiles": [
         "auth.py",
         "config.py",
@@ -61,14 +61,14 @@
       "path": "static",
       "purpose": "Static files",
       "fileCount": 0,
-      "lastAccessed": 1789736035096,
+      "lastAccessed": 1790337610192,
       "keyFiles": []
     },
     "templates": {
       "path": "templates",
       "purpose": null,
       "fileCount": 22,
-      "lastAccessed": 1789736035273,
+      "lastAccessed": 1790337610193,
       "keyFiles": [
         "base.html",
         "community.html",
@@ -80,21 +80,177 @@
   },
   "hotPaths": [
     {
-      "path": ".env",
-      "accessCount": 1,
-      "lastAccessed": 1789736996306,
+      "path": "dev.ps1",
+      "accessCount": 21,
+      "lastAccessed": 1790345590037,
+      "type": "file"
+    },
+    {
+      "path": "app/services/aladhan.py",
+      "accessCount": 9,
+      "lastAccessed": 1790342021632,
       "type": "file"
     },
     {
       "path": "static/css/style.css",
-      "accessCount": 1,
-      "lastAccessed": 1789737595131,
+      "accessCount": 7,
+      "lastAccessed": 1790345033729,
+      "type": "directory"
+    },
+    {
+      "path": "app/routers/mosques.py",
+      "accessCount": 6,
+      "lastAccessed": 1790344865940,
       "type": "file"
     },
     {
-      "path": "templates/mosque_detail.html",
+      "path": "",
+      "accessCount": 5,
+      "lastAccessed": 1790344692813,
+      "type": "directory"
+    },
+    {
+      "path": "templates/mosques.html",
+      "accessCount": 4,
+      "lastAccessed": 1790344940199,
+      "type": "file"
+    },
+    {
+      "path": "static/js/map.js",
+      "accessCount": 4,
+      "lastAccessed": 1790345022550,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 3,
+      "lastAccessed": 1790341147977,
+      "type": "file"
+    },
+    {
+      "path": "app/main.py",
+      "accessCount": 3,
+      "lastAccessed": 1790341499987,
+      "type": "file"
+    },
+    {
+      "path": "templates/base.html",
+      "accessCount": 3,
+      "lastAccessed": 1790341504870,
+      "type": "file"
+    },
+    {
+      "path": "templates",
+      "accessCount": 3,
+      "lastAccessed": 1790342780538,
+      "type": "directory"
+    },
+    {
+      "path": "static/img/icon-512.png",
+      "accessCount": 2,
+      "lastAccessed": 1790341474333,
+      "type": "file"
+    },
+    {
+      "path": "static/img/icon-maskable-512.png",
+      "accessCount": 2,
+      "lastAccessed": 1790341474659,
+      "type": "file"
+    },
+    {
+      "path": "app",
+      "accessCount": 2,
+      "lastAccessed": 1790341909620,
+      "type": "directory"
+    },
+    {
+      "path": "app/services/praytime_calc.py",
+      "accessCount": 2,
+      "lastAccessed": 1790342004112,
+      "type": "file"
+    },
+    {
+      "path": "templates/prayer_times.html",
+      "accessCount": 2,
+      "lastAccessed": 1790342019803,
+      "type": "file"
+    },
+    {
+      "path": "templates/_icons.html",
+      "accessCount": 2,
+      "lastAccessed": 1790344698066,
+      "type": "directory"
+    },
+    {
+      "path": "app/config.py",
+      "accessCount": 2,
+      "lastAccessed": 1790344812079,
+      "type": "file"
+    },
+    {
+      "path": "run.py",
       "accessCount": 1,
-      "lastAccessed": 1789737606486,
+      "lastAccessed": 1790337727937,
+      "type": "file"
+    },
+    {
+      "path": "app/routers/auth.py",
+      "accessCount": 1,
+      "lastAccessed": 1790339931980,
+      "type": "file"
+    },
+    {
+      "path": "requirements.txt",
+      "accessCount": 1,
+      "lastAccessed": 1790339937196,
+      "type": "directory"
+    },
+    {
+      "path": ".env.example",
+      "accessCount": 1,
+      "lastAccessed": 1790341376411,
+      "type": "directory"
+    },
+    {
+      "path": "static/manifest.webmanifest",
+      "accessCount": 1,
+      "lastAccessed": 1790341480956,
+      "type": "file"
+    },
+    {
+      "path": "static/sw.js",
+      "accessCount": 1,
+      "lastAccessed": 1790341486000,
+      "type": "file"
+    },
+    {
+      "path": "static/offline.html",
+      "accessCount": 1,
+      "lastAccessed": 1790341491248,
+      "type": "file"
+    },
+    {
+      "path": "app/schemas.py",
+      "accessCount": 1,
+      "lastAccessed": 1790344705676,
+      "type": "file"
+    },
+    {
+      "path": "app/services/ratelimit.py",
+      "accessCount": 1,
+      "lastAccessed": 1790344809430,
+      "type": "file"
+    },
+    {
+      "path": "app/services/overpass.py",
+      "accessCount": 1,
+      "lastAccessed": 1790344839698,
+      "type": "file"
+    },
+    {
+      "path": "app/services/geocode.py",
+      "accessCount": 1,
+      "lastAccessed": 1790344854313,
       "type": "file"
     }
   ],

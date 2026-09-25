@@ -31,6 +31,9 @@
       {% endfor %}
     </div>
   </div>
+  {% if prayer.calculated %}
+  <p class="map-note" style="padding-left:0">ระบบเวลาละหมาดหลักขัดข้องชั่วคราว เวลานี้คำนวณจากพิกัดจังหวัด อาจต่างจากประกาศของมัสยิดเล็กน้อย</p>
+  {% endif %}
 </div>
 {% else %}
 <div class="notice notice--error">{{ prayer.error }}</div>

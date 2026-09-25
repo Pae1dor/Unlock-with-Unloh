@@ -7,30 +7,41 @@
 {% endblock %}
 
 {% block content %}
-<div class="searchbox" style="margin:14px 16px 0">
-  <svg class="ico"><use href="#i-search"></use></svg>
-  <input type="search" id="mosque-search" placeholder="ค้นหามัสยิดหรือพื้นที่" autocomplete="off">
+<div class="mosque-search" id="mosque-search-wrap">
+  <div class="searchbox">
+    <svg class="ico"><use href="#i-search"></use></svg>
+    <input type="search" id="mosque-search" placeholder="มัสยิดใกล้ฉัน หรือพิมพ์ชื่อ/พื้นที่" autocomplete="off"
+           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mosque-suggest">
+  </div>
+  <div class="suggest" id="mosque-suggest" role="listbox" aria-label="ผลการค้นหา" hidden></div>
 </div>
 
 <div id="map"></div>
 <p class="map-note" id="geo-note">เปิดสิทธิ์ตำแหน่งที่ตั้งเพื่อดูระยะทางจากคุณถึงแต่ละมัสยิด</p>
+<p class="map-note" id="mosque-stale" hidden>ข้อมูลมัสยิดอาจไม่เป็นปัจจุบัน — เซิร์ฟเวอร์แผนที่ขัดข้องชั่วคราว</p>
 
 <div class="section" style="padding-top:6px">
   <div class="section__head">
     <h2 class="section__title">มัสยิดใกล้เคียง</h2>
   </div>
+  {# Rows are built by static/js/map.js from live OpenStreetMap data (same data as the map markers). #}
   <div class="list-card" id="mosque-list">
-    {% for mosque in mosques %}
-    <a class="list-row" href="/mosques/{{ mosque.id }}" data-lat="{{ mosque.lat }}" data-lng="{{ mosque.lng }}" data-id="{{ mosque.id }}"
-       data-search="{{ mosque.name }} {{ mosque.address }}" title="{{ mosque.address }}">
-      <svg class="ico" style="color:var(--green)"><use href="#i-map-pin"></use></svg>
-      <span class="list-row__title">{{ mosque.name }}</span>
-      <span class="list-row__dist" data-dist>—</span>
-    </a>
-    {% else %}
-    <p class="empty">ยังไม่มีข้อมูลมัสยิด — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
-    {% endfor %}
+    <div class="empty" id="mosque-status">
+      <span id="mosque-status-text">กำลังโหลดมัสยิด…</span>
+      <button type="button" class="status-retry" id="mosque-retry" hidden>ลองใหม่</button>
+    </div>
     <p class="empty" id="no-mosque-results" hidden>ไม่พบมัสยิดที่ค้นหา</p>
+  </div>
+</div>
+
+{# Our own explanation shown BEFORE the browser's location prompt (and when location is blocked). #}
+<div class="geo-prompt" id="geo-prompt" role="dialog" aria-modal="true" aria-labelledby="geo-prompt-title" hidden>
+  <div class="geo-prompt__card">
+    <div class="geo-prompt__icon"><svg class="ico"><use href="#i-map-pin"></use></svg></div>
+    <h2 class="geo-prompt__title" id="geo-prompt-title"></h2>
+    <p class="geo-prompt__body" id="geo-prompt-body"></p>
+    <button type="button" class="btn" id="geo-prompt-primary"></button>
+    <button type="button" class="btn btn--ghost" id="geo-prompt-secondary"></button>
   </div>
 </div>
 {% endblock %}

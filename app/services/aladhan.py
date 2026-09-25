@@ -2,16 +2,19 @@
 
 https://api.aladhan.com/v1/timingsByCity — no API key required.
 Responses are cached in-process, keyed by (city, date), so we hit the network at
-most once per city per day.
+most once per city per day. If Aladhan is unreachable, times for Thai provinces are
+calculated locally (app/services/praytime_calc.py) until it comes back.
 """
 from __future__ import annotations
 
+import time
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 import httpx
 
 from app.config import COUNTRY, TIMEZONE
+from app.services import praytime_calc
 
 API_URL = "https://api.aladhan.com/v1/timingsByCity"
 # 3 = Muslim World League, the method commonly used in Thailand.
@@ -49,6 +52,11 @@ THAI_MONTHS = [
 THAI_WEEKDAYS = ["วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์", "วันอาทิตย์"]
 
 _cache: dict[tuple[str, str], dict] = {}
+
+REQUEST_TIMEOUT = 6.0
+OUTAGE_RETRY_SECONDS = 60
+# key -> (monotonic time of the failed attempt, the fallback result we returned)
+_outage: dict[tuple[str, str], tuple[float, dict]] = {}
 
 
 def now_local() -> datetime:
@@ -114,6 +122,29 @@ def _mark_current(timings: list[dict], ref: datetime) -> tuple[str | None, str |
     return current, nxt
 
 
+def _calculated(city: str, day: date) -> dict | None:
+    """Times computed on our side, for when Aladhan is down. None if the city is unknown."""
+    coords = praytime_calc.coordinates_for(city)
+    if coords is None:
+        return None
+    raw = praytime_calc.calculate(*coords, day)
+    timings = [{"key": k, "name_th": label, "time": raw[k]} for k, label in PRAYERS]
+    current, nxt = _mark_current(timings, now_local())
+    return {
+        "ok": True,
+        "error": None,
+        "calculated": True,
+        "city": city,
+        "timings": timings,
+        # Hijri is left out on purpose: a local calendar can be a day off from the announced one.
+        "hijri": "",
+        "gregorian": thai_date(day),
+        "current": current,
+        "next": nxt,
+        "sunrise": raw["Sunrise"],
+    }
+
+
 def get_prayer_times(city: str, on: date | None = None) -> dict:
     """Fetch (and cache) the day's prayer times for a city.
 
@@ -128,6 +159,15 @@ def get_prayer_times(city: str, on: date | None = None) -> dict:
         cached["current"], cached["next"] = _mark_current(cached["timings"], now_local())
         return cached
 
+    # While the API is down, don't re-hit it on every page view (each attempt blocks the
+    # request for up to the timeout, and home/prayer/mosque pages all call this).
+    failed = _outage.get(key)
+    if failed and time.monotonic() - failed[0] < OUTAGE_RETRY_SECONDS:
+        result = failed[1]
+        if result["ok"]:
+            result["current"], result["next"] = _mark_current(result["timings"], now_local())
+        return result
+
     params = {
         "city": city,
         "country": COUNTRY,
@@ -136,11 +176,16 @@ def get_prayer_times(city: str, on: date | None = None) -> dict:
     }
     try:
         # follow_redirects is required: Aladhan answers timingsByCity with a 302.
-        response = httpx.get(API_URL, params=params, timeout=12.0, follow_redirects=True)
+        response = httpx.get(API_URL, params=params, timeout=REQUEST_TIMEOUT, follow_redirects=True)
         response.raise_for_status()
         payload = response.json()
     except (httpx.HTTPError, ValueError):
-        return _fallback(city, "ไม่สามารถเชื่อมต่อข้อมูลเวลาละหมาดได้ กรุณาลองใหม่อีกครั้ง")
+        result = _calculated(city, day) or _fallback(
+            city, "ไม่สามารถเชื่อมต่อข้อมูลเวลาละหมาดได้ กรุณาลองใหม่อีกครั้ง"
+        )
+        _outage[key] = (time.monotonic(), result)
+        return result
+    _outage.pop(key, None)
 
     data = payload.get("data") or {}
     raw_timings = data.get("timings") or {}

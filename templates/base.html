@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <meta name="theme-color" content="#1B5E3A">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="icon" type="image/png" href="/static/img/icon-192.png">
+  <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="พี่น้องอิสลาม">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="/static/css/style.css">
   {% block head %}{% endblock %}
 </head>
@@ -55,5 +63,11 @@
   </div>
 
   {% block scripts %}{% endblock %}
+  <script>
+    // Browsers only allow service workers on https (or localhost); elsewhere this is skipped.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+    }
+  </script>
 </body>
 </html>

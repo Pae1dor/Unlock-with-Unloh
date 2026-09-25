@@ -1,7 +1,7 @@
 {
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd \\\"/c/Users/hp/OneDrive/Desktop/Projectปัญยาอ่อน/Unlock with Unloh\\\" && echo \\\"=== ใครอ้างถึง .venv-1 บ้าง ===\\\" && grep -rn \\\"venv-1\\\" --include=\\\"*.py\\\" --include=\\\"*.md\\\" --include=\\\"...",
-  "error": "Exit code 1\n=== ใครอ้างถึง .venv-1 บ้าง ===",
-  "timestamp": "2026-09-18T14:11:13.103Z",
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"Set-Location \\\"C:\\\\Users\\\\hp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-hp-OneDrive-Desktop-Project----------Unlock-with-Unloh\\\\2fb19745-94eb-4184-835f-e03f79ce640d\\\\scratchpad\\\"\\nnode test_m...",
+  "error": "Exit code 1\nPASS — A granted: no custom popup (permission already given)\nPASS — A map moved to the visitor (bbox centred on 13.68,100.48) :: centre 13.6800,100.4800\nPASS — A zoom 14 (412 px wide ≈ 0.0354° of longitude) :: span 0.0354\nPASS — A browser talks to our backend only (0 direct Overpass calls) :: 2 /api/mosques/nearby, 0 direct\nPASS — A zoom-14 view has no mosques -> ไม่พบมัสยิดในบริเวณนี้ :: ไม่พบมัสยิดในบริเวณนี้\n      ลองใหม่\n   stale note visible after zoom-out: true\nPASS — A rows lo...",
+  "timestamp": "2026-09-25T14:08:53.203Z",
   "retry_count": 1
 }

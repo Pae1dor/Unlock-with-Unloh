@@ -18,6 +18,10 @@ COUNTRY = "Thailand"
 COOKIE_NAME = "access_token"
 CITY_COOKIE = "city"
 
+# Sent to OpenStreetMap services (Overpass, Nominatim); their policies require an app identifier.
+UPSTREAM_USER_AGENT = "UnlockWithUnloh/0.1 (+https://github.com/Pae1dor/Unlock-with-Unloh)"
+CACHE_DIR = BASE_DIR / ".cache"
+
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 QR_DIR = STATIC_DIR / "qr"

@@ -29,6 +29,15 @@ JSON endpoints used by the front-end JS: `/api/mosques`, `/api/prayer-notificati
 
 ## Quick start (SQLite — zero dependencies, no Docker)
 
+On Windows, one command sets everything up and starts the server at <http://127.0.0.1:9999>:
+
+```powershell
+.\dev.ps1          # this computer only
+.\dev.ps1 -Lan     # also reachable from your phone on the same Wi-Fi (prints URL + QR code)
+```
+
+Or step by step:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate          # Windows
@@ -38,10 +47,10 @@ pip install -r requirements.txt
 
 cp .env.example .env            # then set DATABASE_URL=sqlite:///./dev.db
 python -m app.seed              # seeds news, mosques, campaigns + generates QR PNGs
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 9999
 ```
 
-Open <http://127.0.0.1:8000>.
+Open <http://127.0.0.1:9999>.
 
 ## Running against PostgreSQL
 

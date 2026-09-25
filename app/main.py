@@ -1,8 +1,9 @@
 """FastAPI application entry point."""
+import mimetypes
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import QR_DIR, STATIC_DIR
@@ -33,7 +34,19 @@ app = FastAPI(title="ประชาชนเพื่อพี่น้อง�
 
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 QR_DIR.mkdir(parents=True, exist_ok=True)
+# Windows' registry has no type for .webmanifest, so StaticFiles would send text/plain.
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    # Served from the site root (not /static/) so the worker's scope covers every page.
+    return FileResponse(
+        STATIC_DIR / "sw.js",
+        media_type="text/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 @app.exception_handler(LoginRequired)
