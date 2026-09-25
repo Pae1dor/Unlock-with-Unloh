@@ -16,7 +16,8 @@
   <div class="suggest" id="mosque-suggest" role="listbox" aria-label="ผลการค้นหา" hidden></div>
 </div>
 
-<div id="map"></div>
+<div id="map" data-logged-in="{{ 'true' if user else 'false' }}"></div>
+<p class="checkin-toast" id="checkin-toast" role="status" aria-live="polite" hidden></p>
 <p class="map-note" id="geo-note">เปิดสิทธิ์ตำแหน่งที่ตั้งเพื่อดูระยะทางจากคุณถึงแต่ละมัสยิด</p>
 <p class="map-note" id="mosque-stale" hidden>ข้อมูลมัสยิดอาจไม่เป็นปัจจุบัน — เซิร์ฟเวอร์แผนที่ขัดข้องชั่วคราว</p>
 
@@ -30,7 +31,6 @@
       <span id="mosque-status-text">กำลังโหลดมัสยิด…</span>
       <button type="button" class="status-retry" id="mosque-retry" hidden>ลองใหม่</button>
     </div>
-    <p class="empty" id="no-mosque-results" hidden>ไม่พบมัสยิดที่ค้นหา</p>
   </div>
 </div>
 

@@ -19,6 +19,15 @@ class CommentOut(BaseModel):
     created_at: str
 
 
+class CheckinIn(BaseModel):
+    """The visitor's current GPS fix; used to verify distance, never stored."""
+
+    osm_id: str = Field(pattern=r"^(node|way|relation)/\d{1,15}$")
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+    accuracy: float = Field(ge=0, le=100000)   # metres, from the Geolocation API
+
+
 class MosqueOut(BaseModel):
     id: int
     name: str

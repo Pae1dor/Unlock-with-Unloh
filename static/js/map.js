@@ -1,21 +1,31 @@
-// Mosque finder: live mosques from OpenStreetMap for the area the map shows.
-// Data comes from our backend (/api/mosques/nearby), which queries Overpass and caches it
-// per tile. The markers and the "มัสยิดใกล้เคียง" list are both rendered from the one
-// `mosques` array, so they always contain the same mosques.
+// Mosque finder: mosques from OpenStreetMap, served by our backend.
+// Two modes:
+//   'near' — "มัสยิดใกล้ฉัน": the 10 mosques closest to the visitor (/api/mosques/nearest),
+//            wherever they are; the map is fitted to show the visitor and all 10.
+//   'bbox' — whatever the map shows (/api/mosques/nearby). Entered as soon as the visitor
+//            drags/zooms the map themselves, or picks an area in the search.
+// The markers and the list are both rendered from the one `mosques` array, so they
+// always contain the same mosques.
+// Check-in ("เช็คอิน") buttons sit in each row and popup; the server (/api/checkins)
+// decides — it checks the distance with its own mosque coordinates and the prayer window.
 (function () {
   var mapEl = document.getElementById('map');
   if (!mapEl || typeof L === 'undefined') return;
 
-  var MIN_ZOOM = 12;
+  var MIN_ZOOM = 10;
   var USER_ZOOM = 14;
   var MOVE_DEBOUNCE_MS = 500;
   var SEARCH_DEBOUNCE_MS = 400;
   var REQUEST_TIMEOUT_MS = 45000;   // the server may try 3 Overpass mirrors x 10 s
   var CHECK_IN_RADIUS_M = 100;
+  var NEAREST_COUNT = 10;
   var MAX_MOSQUE_SUGGESTIONS = 5;
   var BANGKOK = [13.7563, 100.5018];
   var CONSENT_KEY = 'mosqueFinder.geoConsent';      // localStorage: 'yes' after อนุญาต
   var DISMISSED_KEY = 'mosqueFinder.geoDismissed';  // sessionStorage: 'yes' after ไม่ตอนนี้
+  var LOGGED_IN = mapEl.dataset.loggedIn === 'true';
+  var CHECKIN_REFRESH_MS = 60000;   // windows open/close by the minute
+  var MAX_STATUS_IDS = 100;
 
   var map = L.map('map').setView(BANGKOK, 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -30,22 +40,25 @@
   var retryBtn = document.getElementById('mosque-retry');
   var staleEl = document.getElementById('mosque-stale');
   var noteEl = document.getElementById('geo-note');
-  var noResults = document.getElementById('no-mosque-results');
+  var toastEl = document.getElementById('checkin-toast');
   var searchWrap = document.getElementById('mosque-search-wrap');
   var searchInput = document.getElementById('mosque-search');
   var suggestEl = document.getElementById('mosque-suggest');
 
   // { id: "node/123" | "way/456" | "relation/789", name, lat, lng, dist (metres, or null) }
-  // The OSM "type/id" is the key a future check-in / RSVP will use.
+  // The OSM "type/id" is the key check-ins are stored under.
   var mosques = [];
   var markersById = {};
-  var rowsById = {};
+  var checkinStatus = {};      // osm id -> {state, label, message, ...} from /api/checkins/status
+  var checkinButtons = {};     // osm id -> [row button, popup button]
+  var checkinBusy = false;
+  var mode = 'bbox';           // 'near' | 'bbox' (see top of file)
   var userPos = null;          // [lat, lng] once geolocation succeeds
   var userAccuracy = null;     // metres
   var userMarker = null;
-  var inflight = null;         // AbortController of the area request in progress
+  var inflight = null;         // AbortController of the data request in progress
   var moveTimer = null;
-  var query = '';              // active name filter ('' = มัสยิดใกล้ฉัน)
+  var query = '';              // text in the search box (filters the dropdown only)
 
   function storage(kind) {
     try { return window[kind]; } catch (e) { return null; }
@@ -64,28 +77,21 @@
     retryBtn.hidden = !withRetry;
     statusEl.hidden = !text;
   }
-  retryBtn.addEventListener('click', loadVisibleArea);
+  retryBtn.addEventListener('click', function () {
+    if (mode === 'near') loadNearest(); else loadVisibleArea();
+  });
 
-  // ---------- data: our backend, per map area ----------
-  function loadVisibleArea() {
+  // ---------- data: our backend ----------
+  // GET `url`, then hand the mosques to `onData`; a newer request (or a mode change)
+  // supersedes this one, and a failure shows the retry button without breaking the page.
+  function request(url, onData) {
     if (inflight) { inflight.superseded = true; inflight.abort(); }
-    inflight = null;
-
-    if (map.getZoom() < MIN_ZOOM) {
-      setStatus('ซูมเข้าอีกหน่อยเพื่อดูมัสยิด');
-      return;
-    }
-
     var ctrl = new AbortController();
     inflight = ctrl;
     var timer = setTimeout(function () { ctrl.abort(); }, REQUEST_TIMEOUT_MS);
     if (!mosques.length) setStatus('กำลังโหลดมัสยิด…', false, true);
 
-    var b = map.getBounds();
-    var bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()]
-      .map(function (v) { return v.toFixed(5); }).join(',');
-
-    fetch('/api/mosques/nearby?bbox=' + bbox, { signal: ctrl.signal, headers: { Accept: 'application/json' } })
+    fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -96,7 +102,7 @@
           return { id: m.id, name: m.name, lat: m.lat, lng: m.lng, dist: null };
         });
         staleEl.hidden = !data.stale;
-        render();
+        onData();
       })
       .catch(function () {
         if (ctrl.superseded) return;
@@ -108,7 +114,63 @@
       });
   }
 
+  function cancelRequest() {
+    if (inflight) { inflight.superseded = true; inflight.abort(); }
+    inflight = null;
+  }
+
+  // 'bbox' mode: whatever the map shows
+  function loadVisibleArea() {
+    if (mode !== 'bbox') return;
+    if (map.getZoom() < MIN_ZOOM) {
+      cancelRequest();
+      setStatus('ซูมเข้าอีกหน่อยเพื่อดูมัสยิด');
+      return;
+    }
+    var b = map.getBounds();
+    var bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()]
+      .map(function (v) { return v.toFixed(5); }).join(',');
+    request('/api/mosques/nearby?bbox=' + bbox, render);
+  }
+
+  // 'near' mode: the NEAREST_COUNT closest mosques, and a map that shows them and the visitor
+  function loadNearest() {
+    if (mode !== 'near' || !userPos) return;
+    request('/api/mosques/nearest?lat=' + userPos[0].toFixed(6) + '&lng=' + userPos[1].toFixed(6) +
+            '&limit=' + NEAREST_COUNT, function () {
+      render();
+      var points = [userPos].concat(mosques.map(function (m) { return [m.lat, m.lng]; }));
+      if (points.length > 1) map.fitBounds(points, { padding: [28, 28], maxZoom: 16 });
+      else map.setView(userPos, USER_ZOOM);
+    });
+  }
+
+  function enterNearMode() {
+    mode = 'near';
+    clearTimeout(moveTimer);
+    setNote('แสดง ' + NEAREST_COUNT + ' มัสยิดที่ใกล้คุณที่สุด · เลื่อนแผนที่เพื่อดูบริเวณอื่น');
+    loadNearest();
+  }
+
+  function enterBboxMode() {
+    if (mode === 'bbox') return;
+    mode = 'bbox';
+    setNote(userPos ? 'เรียงตามระยะทางจากตำแหน่งของคุณ' : 'เปิดสิทธิ์ตำแหน่งที่ตั้งเพื่อดูระยะทางจากคุณถึงแต่ละมัสยิด');
+  }
+
+  // Map moves we make ourselves (fitBounds, panning to a row) keep 'near' mode; only the
+  // visitor's own drag/zoom switches to 'bbox'. These events only come from the visitor.
+  map.on('dragstart', enterBboxMode);
+  mapEl.addEventListener('wheel', enterBboxMode, { passive: true });
+  mapEl.addEventListener('dblclick', enterBboxMode);
+  mapEl.addEventListener('touchstart', function (e) { if (e.touches.length > 1) enterBboxMode(); }, { passive: true });
+  mapEl.addEventListener('keydown', enterBboxMode);
+  mapEl.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.leaflet-control-zoom')) enterBboxMode();
+  }, true);
+
   map.on('moveend', function () {
+    if (mode !== 'bbox') return;
     clearTimeout(moveTimer);
     moveTimer = setTimeout(loadVisibleArea, MOVE_DEBOUNCE_MS);
   });
@@ -131,7 +193,7 @@
     return m < 999.5 ? Math.round(m) + ' ม.' : (m / 1000).toFixed(1) + ' กม.';
   }
 
-  // Check-in is allowed within CHECK_IN_RADIUS_M of the mosque (UI comes later).
+  // Client-side hint only (greys the button); the server re-checks with its own coordinates.
   // Accepts a mosque object or a list row's dataset ({ lat, lng } as numbers or strings).
   function canCheckIn(mosque) {
     if (!userPos || !mosque) return false;
@@ -139,6 +201,128 @@
     var lng = Number(mosque.lng);
     if (!isFinite(lat) || !isFinite(lng)) return false;
     return haversineM(userPos[0], userPos[1], lat, lng) <= CHECK_IN_RADIUS_M;
+  }
+
+  // ---------- check-in ----------
+  var toastTimer = null;
+  function toast(text, isError) {
+    toastEl.textContent = text;
+    toastEl.classList.toggle('is-error', !!isError);
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 5000);
+  }
+
+  // What the check-in button of mosque `m` should say/do right now.
+  function checkinState(m) {
+    if (!LOGGED_IN) return { kind: 'login', text: 'เข้าสู่ระบบเพื่อเช็คอิน' };
+    var st = checkinStatus[m.id];
+    if (!st) return { kind: 'loading', text: 'เช็คอิน', disabled: true };
+    if (st.state === 'done') return { kind: 'done', text: st.message, disabled: true };
+    if (st.state === 'done_elsewhere') return { kind: 'elsewhere', text: st.message, disabled: true };
+    if (st.state === 'closed') return { kind: 'closed', text: st.message, disabled: true };
+    if (!userPos) return { kind: 'locate', text: 'เปิดตำแหน่งเพื่อเช็คอิน' };
+    if (!canCheckIn(m)) {
+      var d = haversineM(userPos[0], userPos[1], m.lat, m.lng);
+      return { kind: 'far', text: 'อยู่ห่าง ' + formatDist(d) + ' ต้องไม่เกิน ' + CHECK_IN_RADIUS_M + ' ม.', disabled: true };
+    }
+    return { kind: 'open', text: 'เช็คอิน ' + st.label };
+  }
+
+  function applyCheckinState(btn, m) {
+    var s = checkinBusy && btn.dataset.busy ? { kind: 'busy', text: 'กำลังเช็คอิน…', disabled: true } : checkinState(m);
+    btn.textContent = s.text;
+    btn.disabled = !!s.disabled;
+    btn.className = 'checkin-btn checkin-btn--' + s.kind;
+  }
+
+  function updateCheckinButtons() {
+    mosques.forEach(function (m) {
+      (checkinButtons[m.id] || []).forEach(function (btn) { applyCheckinState(btn, m); });
+    });
+  }
+
+  function makeCheckinButton(m) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      onCheckinClick(m, btn);
+    });
+    (checkinButtons[m.id] = checkinButtons[m.id] || []).push(btn);
+    applyCheckinState(btn, m);
+    return btn;
+  }
+
+  var statusCtrl = null;
+  function refreshCheckinStatus() {
+    if (!LOGGED_IN || !mosques.length) return;
+    if (statusCtrl) statusCtrl.abort();
+    var ctrl = new AbortController();
+    statusCtrl = ctrl;
+    var ids = mosques.slice(0, MAX_STATUS_IDS).map(function (m) { return m.id; }).join(',');
+    fetch('/api/checkins/status?osm_ids=' + encodeURIComponent(ids), { signal: ctrl.signal, headers: { Accept: 'application/json' } })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (statusCtrl !== ctrl) return;
+        checkinStatus = data.mosques || {};
+        updateCheckinButtons();
+      })
+      .catch(function () { /* buttons stay in their last state; retried on the next refresh */ });
+  }
+  setInterval(function () {
+    if (document.visibilityState === 'visible') refreshCheckinStatus();
+  }, CHECKIN_REFRESH_MS);
+
+  function onCheckinClick(m, btn) {
+    var s = checkinState(m);
+    if (s.kind === 'login') { window.location.href = '/login?next=' + encodeURIComponent('/mosques'); return; }
+    if (s.kind === 'locate') { startLocation(true); return; }
+    if (s.kind !== 'open' || checkinBusy) return;
+
+    checkinBusy = true;
+    btn.dataset.busy = '1';
+    updateCheckinButtons();
+    var done = function () {
+      checkinBusy = false;
+      delete btn.dataset.busy;
+      updateCheckinButtons();
+    };
+    // A fresh fix, not the one from when the page opened: the visitor may have walked in since.
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        userPos = [pos.coords.latitude, pos.coords.longitude];
+        userAccuracy = pos.coords.accuracy;
+        if (userMarker) userMarker.setLatLng(userPos);
+        fetch('/api/checkins', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ osm_id: m.id, lat: userPos[0], lng: userPos[1], accuracy: userAccuracy })
+        })
+          .then(function (res) {
+            return res.json().catch(function () { return {}; }).then(function (body) { return { ok: res.ok, body: body }; });
+          })
+          .then(function (r) {
+            if (r.ok) {
+              toast(r.body.message + ' — ' + r.body.mosque_name);
+            } else {
+              var d = r.body.detail || {};
+              toast(d.message || 'เช็คอินไม่สำเร็จ ลองใหม่อีกครั้ง', true);
+            }
+            done();
+            refreshCheckinStatus();
+          })
+          .catch(function () { toast('เช็คอินไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่', true); done(); });
+      },
+      function (err) {
+        toast(err.code === err.PERMISSION_DENIED ? 'ไม่ได้รับสิทธิ์ตำแหน่งที่ตั้ง' : 'หาตำแหน่งไม่สำเร็จ ลองใหม่อีกครั้ง', true);
+        done();
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
   }
 
   // ---------- rendering (markers + list from the same array) ----------
@@ -166,14 +350,16 @@
     nav.rel = 'noopener';
     nav.textContent = 'นำทาง';
     box.appendChild(nav);
+    box.appendChild(makeCheckinButton(m));
     // "ดูรายละเอียด" is hidden until RSVP/events are keyed by OSM id (see app/routers/mosques.py).
     return box;
   }
 
+  // Row = a keyboard-operable "show on map" area + the check-in button next to it
+  // (siblings, because a button must not sit inside another interactive element).
   function buildRow(m) {
-    var row = document.createElement('a');
-    row.className = 'list-row';
-    row.href = '#map';
+    var row = document.createElement('div');
+    row.className = 'list-row mosque-row';
     row.dataset.id = m.id;
     row.dataset.name = m.name;
     row.dataset.lat = m.lat;
@@ -197,20 +383,30 @@
     dist.setAttribute('data-dist', '');
     dist.textContent = formatDist(m.dist);
 
-    row.appendChild(ico);
-    row.appendChild(title);
-    row.appendChild(dist);
-    row.addEventListener('click', function (e) {
-      e.preventDefault();
-      focusMosque(m.id);
+    var main = document.createElement('div');
+    main.className = 'mosque-row__main';
+    main.setAttribute('role', 'button');
+    main.tabIndex = 0;
+    main.setAttribute('aria-label', 'แสดง ' + m.name + ' บนแผนที่');
+    main.appendChild(ico);
+    main.appendChild(title);
+    main.appendChild(dist);
+    main.addEventListener('click', function () { focusMosque(m.id); });
+    main.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();   // Space would otherwise scroll the page
+        focusMosque(m.id);
+      }
     });
+
+    row.appendChild(main);
+    row.appendChild(makeCheckinButton(m));
     return row;
   }
 
   function focusMosque(id) {
     var marker = markersById[id];
     if (!marker) return;
-    if (!markerLayer.hasLayer(marker)) markerLayer.addLayer(marker);
     mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     map.panTo(marker.getLatLng());
     marker.openPopup();
@@ -234,39 +430,25 @@
 
     markerLayer.clearLayers();
     markersById = {};
-    rowsById = {};
+    checkinButtons = {};
     Array.prototype.slice.call(listEl.querySelectorAll('.list-row')).forEach(function (r) { r.remove(); });
 
     var frag = document.createDocumentFragment();
     mosques.forEach(function (m) {
       markersById[m.id] = L.marker([m.lat, m.lng], { title: m.name }).bindPopup(popupContent(m));
-      rowsById[m.id] = buildRow(m);
-      frag.appendChild(rowsById[m.id]);
+      markerLayer.addLayer(markersById[m.id]);
+      frag.appendChild(buildRow(m));
     });
-    listEl.insertBefore(frag, noResults);
+    listEl.appendChild(frag);
 
     setStatus(mosques.length ? '' : 'ไม่พบมัสยิดในบริเวณนี้');
-    applyFilter();
     if (openId && markersById[openId]) markersById[openId].openPopup();
+    refreshCheckinStatus();
   }
 
-  // Name filter: hides non-matching rows AND their markers, so map and list stay in sync.
+  // Search text only narrows the dropdown; the map and list keep showing everything loaded.
   function matches(m) {
     return !query || m.name.toLowerCase().indexOf(query.toLowerCase()) !== -1;
-  }
-  function applyFilter() {
-    var visible = 0;
-    mosques.forEach(function (m) {
-      var ok = matches(m);
-      rowsById[m.id].hidden = !ok;
-      if (ok) {
-        markerLayer.addLayer(markersById[m.id]);
-        visible++;
-      } else {
-        markerLayer.removeLayer(markersById[m.id]);
-      }
-    });
-    noResults.hidden = !(query && mosques.length && visible === 0);
   }
 
   // ---------- visitor location ----------
@@ -383,9 +565,7 @@
             .addTo(map)
             .bindPopup('ตำแหน่งของคุณ');
         }
-        setNote('เรียงตามระยะทางจากตำแหน่งของคุณ');
-        if (mosques.length) render();           // distances for what is on screen now
-        map.setView(userPos, USER_ZOOM);          // moveend then loads the mosques around the visitor
+        enterNearMode();
       },
       function (err) {
         if (err.code === err.PERMISSION_DENIED) {
@@ -423,6 +603,9 @@
   var activeIndex = -1;
 
   function openSuggest() {
+    // A debounced search/geocode result can arrive after the visitor closed the list
+    // (Escape, tapped the map); only show it while they are still in the search box.
+    if (document.activeElement !== searchInput) return;
     suggestEl.hidden = false;
     searchInput.setAttribute('aria-expanded', 'true');
   }
@@ -473,7 +656,6 @@
   function useNearMe() {
     searchInput.value = '';
     query = '';
-    applyFilter();
     closeSuggest();
     searchInput.blur();   // otherwise closing the location popup refocuses the box and reopens this list
     startLocation(true);
@@ -508,11 +690,10 @@
     else if (!areas) addNote('พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อค้นหาพื้นที่');
     (Array.isArray(areas) ? areas : []).forEach(function (place) {
       addItem(place.name, place.label !== place.name ? place.label : '', '', function () {
-        // Clear the name filter so the new area's mosques aren't hidden by it.
         searchInput.value = '';
         query = '';
-        applyFilter();
         closeSuggest();
+        enterBboxMode();
         map.setView([place.lat, place.lng], USER_ZOOM);   // moveend loads that area's mosques
       });
     });
@@ -521,7 +702,6 @@
 
   function runSearch() {
     query = searchInput.value.trim();
-    applyFilter();
     if (geoCtrl) { geoCtrl.abort(); geoCtrl = null; }
     if (query.length < 2) { renderSuggest(null); return; }
 
@@ -560,20 +740,21 @@
   searchInput.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowDown') { e.preventDefault(); openSuggest(); setActive(activeIndex + 1); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIndex - 1); }
-    else if (e.key === 'Escape') { closeSuggest(); }
+    else if (e.key === 'Escape') { clearTimeout(searchTimer); closeSuggest(); searchInput.blur(); }
     else if (e.key === 'Enter') {
       e.preventDefault();
       var pick = suggestItems[activeIndex >= 0 ? activeIndex : 0];
       if (pick && !suggestEl.hidden) pick.run();
     }
   });
-  document.addEventListener('click', function (e) {
+  // pointerdown (not click) so starting to drag the map also closes the list
+  document.addEventListener('pointerdown', function (e) {
     if (!searchWrap.contains(e.target)) closeSuggest();
   });
 
-  // For the upcoming check-in feature.
   window.MosqueFinder = {
     canCheckIn: canCheckIn,
+    refreshCheckinStatus: refreshCheckinStatus,
     checkInRadiusM: CHECK_IN_RADIUS_M,
     getMosques: function () {
       return mosques.map(function (m) { return { id: m.id, name: m.name, lat: m.lat, lng: m.lng, dist: m.dist }; });

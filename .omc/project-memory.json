@@ -80,6 +80,12 @@
   },
   "hotPaths": [
     {
+      "path": "static/js/map.js",
+      "accessCount": 29,
+      "lastAccessed": 1790350361250,
+      "type": "file"
+    },
+    {
       "path": "dev.ps1",
       "accessCount": 21,
       "lastAccessed": 1790345590037,
@@ -92,45 +98,51 @@
       "type": "file"
     },
     {
-      "path": "static/css/style.css",
-      "accessCount": 7,
-      "lastAccessed": 1790345033729,
-      "type": "directory"
+      "path": "app/routers/mosques.py",
+      "accessCount": 9,
+      "lastAccessed": 1790346354489,
+      "type": "file"
     },
     {
-      "path": "app/routers/mosques.py",
-      "accessCount": 6,
-      "lastAccessed": 1790344865940,
+      "path": "app/main.py",
+      "accessCount": 9,
+      "lastAccessed": 1790347321181,
       "type": "file"
+    },
+    {
+      "path": "static/css/style.css",
+      "accessCount": 9,
+      "lastAccessed": 1790350385943,
+      "type": "directory"
     },
     {
       "path": "",
-      "accessCount": 5,
-      "lastAccessed": 1790344692813,
+      "accessCount": 8,
+      "lastAccessed": 1790351609622,
       "type": "directory"
     },
     {
-      "path": "templates/mosques.html",
-      "accessCount": 4,
-      "lastAccessed": 1790344940199,
+      "path": "app/services/overpass.py",
+      "accessCount": 7,
+      "lastAccessed": 1790347327851,
       "type": "file"
     },
     {
-      "path": "static/js/map.js",
-      "accessCount": 4,
-      "lastAccessed": 1790345022550,
+      "path": "templates/mosques.html",
+      "accessCount": 6,
+      "lastAccessed": 1790350312583,
+      "type": "file"
+    },
+    {
+      "path": "app/services/mosque_index.py",
+      "accessCount": 5,
+      "lastAccessed": 1790346607096,
       "type": "file"
     },
     {
       "path": "README.md",
       "accessCount": 3,
       "lastAccessed": 1790341147977,
-      "type": "file"
-    },
-    {
-      "path": "app/main.py",
-      "accessCount": 3,
-      "lastAccessed": 1790341499987,
       "type": "file"
     },
     {
@@ -146,6 +158,18 @@
       "type": "directory"
     },
     {
+      "path": "app",
+      "accessCount": 3,
+      "lastAccessed": 1790347241750,
+      "type": "directory"
+    },
+    {
+      "path": "app/routers/checkins.py",
+      "accessCount": 3,
+      "lastAccessed": 1790347311863,
+      "type": "file"
+    },
+    {
       "path": "static/img/icon-512.png",
       "accessCount": 2,
       "lastAccessed": 1790341474333,
@@ -156,12 +180,6 @@
       "accessCount": 2,
       "lastAccessed": 1790341474659,
       "type": "file"
-    },
-    {
-      "path": "app",
-      "accessCount": 2,
-      "lastAccessed": 1790341909620,
-      "type": "directory"
     },
     {
       "path": "app/services/praytime_calc.py",
@@ -185,6 +203,24 @@
       "path": "app/config.py",
       "accessCount": 2,
       "lastAccessed": 1790344812079,
+      "type": "file"
+    },
+    {
+      "path": "app/models.py",
+      "accessCount": 2,
+      "lastAccessed": 1790347256269,
+      "type": "file"
+    },
+    {
+      "path": "app/schemas.py",
+      "accessCount": 2,
+      "lastAccessed": 1790347284472,
+      "type": "file"
+    },
+    {
+      "path": "app/access_log.py",
+      "accessCount": 2,
+      "lastAccessed": 1790347323760,
       "type": "file"
     },
     {
@@ -230,27 +266,27 @@
       "type": "file"
     },
     {
-      "path": "app/schemas.py",
-      "accessCount": 1,
-      "lastAccessed": 1790344705676,
-      "type": "file"
-    },
-    {
       "path": "app/services/ratelimit.py",
       "accessCount": 1,
       "lastAccessed": 1790344809430,
       "type": "file"
     },
     {
-      "path": "app/services/overpass.py",
-      "accessCount": 1,
-      "lastAccessed": 1790344839698,
-      "type": "file"
-    },
-    {
       "path": "app/services/geocode.py",
       "accessCount": 1,
       "lastAccessed": 1790344854313,
+      "type": "file"
+    },
+    {
+      "path": "app/deps.py",
+      "accessCount": 1,
+      "lastAccessed": 1790347242311,
+      "type": "file"
+    },
+    {
+      "path": "app/services/checkin.py",
+      "accessCount": 1,
+      "lastAccessed": 1790347271800,
       "type": "file"
     }
   ],

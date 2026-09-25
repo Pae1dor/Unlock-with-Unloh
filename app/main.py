@@ -6,11 +6,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from app import access_log
 from app.config import QR_DIR, STATIC_DIR
 from app.database import init_db
 from app.deps import LoginRequired
 from app.routers import (
     auth as auth_router,
+    checkins,
     community,
     donation,
     home,
@@ -20,14 +22,21 @@ from app.routers import (
     profile,
     quran,
 )
+from app.services import mosque_index
 from app.templating import templates
+
+access_log.install()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     QR_DIR.mkdir(parents=True, exist_ok=True)
     init_db()
+    # Nationwide mosque list for the finder: loads the saved file, downloads it in the
+    # background when missing or older than a day.
+    mosque_index.start()
     yield
+    mosque_index.stop()
 
 
 app = FastAPI(title="ประชาชนเพื่อพี่น้องอิสลาม", lifespan=lifespan)
@@ -75,6 +84,7 @@ app.include_router(prayer.router)
 app.include_router(quran.router)
 app.include_router(donation.router)
 app.include_router(mosques.router)
+app.include_router(checkins.router)
 app.include_router(news.router)
 app.include_router(community.router)
 app.include_router(profile.router)

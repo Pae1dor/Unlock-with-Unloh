@@ -1,5 +1,8 @@
 """Mosques from OpenStreetMap (Overpass API), cached per map tile.
 
+This is now the FALLBACK: normally the finder is served from the nationwide file kept by
+mosque_index.py. This per-tile path is used until that file exists (first start-up).
+
 The mosque finder asks for the area the map shows (a bbox). We snap it to a grid of
 TILE_DEG x TILE_DEG tiles and answer from the cache when every tile is younger than
 CACHE_TTL. Missing or expired tiles are fetched with ONE Overpass query covering them,
@@ -24,7 +27,9 @@ from app.services.ratelimit import overpass_limiter
 
 TILE_DEG = 0.05                 # ~5.5 km
 CACHE_TTL = 24 * 3600           # seconds
-MAX_TILES = 64                  # the finder only asks at zoom >= 12, which is ~20 tiles on a phone
+# The finder only asks at zoom >= 10: on its ~430 x 230 px map that is up to ~0.6 x 0.35
+# degrees, i.e. ~13 x 8 = 104 tiles. Leave headroom; anything bigger is rejected.
+MAX_TILES = 160
 MIRRORS = [
     "https://overpass-api.de/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
@@ -109,7 +114,13 @@ def _store(key: str, fetched_at: float, mosques: list[dict]) -> None:
         pass  # the in-memory copy still works; the file is only for surviving restarts
 
 
-def _to_mosque(element: dict) -> dict | None:
+def check_area(s: float, w: float, n: float, e: float) -> None:
+    """Reject areas bigger than the finder ever asks for (it only loads at zoom >= 10)."""
+    if len(_tiles_for(s, w, n, e)) > MAX_TILES:
+        raise BBoxError("area too large; zoom in")
+
+
+def to_mosque(element: dict) -> dict | None:
     tags = element.get("tags") or {}
     # nodes carry lat/lon; ways and relations only have the centre Overpass computed
     lat = element.get("lat", (element.get("center") or {}).get("lat"))
@@ -148,16 +159,15 @@ def _query_overpass(s: float, w: float, n: float, e: float) -> list[dict]:
         # and possibly partial results; caching those would hide mosques for a day.
         if "runtime error" in str(payload.get("remark", "")).lower():
             continue
-        mosques = [m for m in map(_to_mosque, payload.get("elements") or []) if m]
+        mosques = [m for m in map(to_mosque, payload.get("elements") or []) if m]
         return mosques
     raise UpstreamError("all Overpass mirrors failed")
 
 
 def nearby(s: float, w: float, n: float, e: float) -> dict:
     """Mosques inside the bbox: {'mosques': [...], 'stale': bool}."""
+    check_area(s, w, n, e)
     tiles = _tiles_for(s, w, n, e)
-    if len(tiles) > MAX_TILES:
-        raise BBoxError("area too large; zoom in")
     keys = [_key(t) for t in tiles]
 
     def expired(entry):
