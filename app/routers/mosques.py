@@ -9,7 +9,7 @@ from app.database import get_db
 from app.deps import get_city, get_current_user, require_user
 from app.models import Mosque, MosqueAttendance, MosqueEvent, User
 from app.schemas import MosqueOut
-from app.services import geocode, overpass
+from app.services import geocode, mosque_index, overpass
 from app.services.aladhan import get_prayer_times, now_local
 from app.templating import templates
 
@@ -127,13 +127,45 @@ def toggle_attendance(
 
 @router.get("/api/mosques/nearby")
 def mosques_nearby(bbox: str = Query(..., description="south,west,north,east")):
-    """Live OpenStreetMap mosques for the map area, cached per tile (see app/services/overpass.py)."""
+    """OpenStreetMap mosques inside the map area.
+
+    Served from the nationwide file (app/services/mosque_index.py); until that exists,
+    from the per-tile Overpass cache (app/services/overpass.py).
+    """
     try:
-        return overpass.nearby(*overpass.parse_bbox(bbox))
+        s, w, n, e = overpass.parse_bbox(bbox)
+        overpass.check_area(s, w, n, e)
+        if mosque_index.available():
+            return {"mosques": mosque_index.in_bbox(s, w, n, e), "stale": mosque_index.is_stale()}
+        return overpass.nearby(s, w, n, e)
     except overpass.BBoxError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except overpass.UpstreamError as exc:
         raise HTTPException(status_code=503, detail="โหลดข้อมูลมัสยิดไม่สำเร็จ") from exc
+
+
+NEAREST_FALLBACK_RADIUS_DEG = 0.1   # ~11 km search box while the nationwide file isn't ready
+
+
+@router.get("/api/mosques/nearest")
+def mosques_nearest(
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+    limit: int = Query(10, ge=1, le=20),
+):
+    """The `limit` mosques closest to the visitor ('มัสยิดใกล้ฉัน'), each with `dist` in metres."""
+    if mosque_index.available():
+        return {"mosques": mosque_index.nearest(lat, lng, limit), "stale": mosque_index.is_stale()}
+    r = NEAREST_FALLBACK_RADIUS_DEG
+    try:
+        area = overpass.nearby(max(-90.0, lat - r), max(-180.0, lng - r), min(90.0, lat + r), min(180.0, lng + r))
+    except overpass.UpstreamError as exc:
+        raise HTTPException(status_code=503, detail="โหลดข้อมูลมัสยิดไม่สำเร็จ") from exc
+    ranked = sorted(
+        ({**m, "dist": round(mosque_index.haversine_m(lat, lng, m["lat"], m["lng"]), 1)} for m in area["mosques"]),
+        key=lambda m: m["dist"],
+    )
+    return {"mosques": ranked[:limit], "stale": area["stale"]}
 
 
 @router.get("/api/geocode")
