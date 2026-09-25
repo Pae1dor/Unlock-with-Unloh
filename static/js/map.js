@@ -1,7 +1,11 @@
-// Mosque finder: live mosques from OpenStreetMap for the area the map shows.
-// Data comes from our backend (/api/mosques/nearby), which queries Overpass and caches it
-// per tile. The markers and the "มัสยิดใกล้เคียง" list are both rendered from the one
-// `mosques` array, so they always contain the same mosques.
+// Mosque finder: mosques from OpenStreetMap, served by our backend.
+// Two modes:
+//   'near' — "มัสยิดใกล้ฉัน": the 10 mosques closest to the visitor (/api/mosques/nearest),
+//            wherever they are; the map is fitted to show the visitor and all 10.
+//   'bbox' — whatever the map shows (/api/mosques/nearby). Entered as soon as the visitor
+//            drags/zooms the map themselves, or picks an area in the search.
+// The markers and the list are both rendered from the one `mosques` array, so they
+// always contain the same mosques.
 (function () {
   var mapEl = document.getElementById('map');
   if (!mapEl || typeof L === 'undefined') return;
@@ -12,6 +16,7 @@
   var SEARCH_DEBOUNCE_MS = 400;
   var REQUEST_TIMEOUT_MS = 45000;   // the server may try 3 Overpass mirrors x 10 s
   var CHECK_IN_RADIUS_M = 100;
+  var NEAREST_COUNT = 10;
   var MAX_MOSQUE_SUGGESTIONS = 5;
   var BANGKOK = [13.7563, 100.5018];
   var CONSENT_KEY = 'mosqueFinder.geoConsent';      // localStorage: 'yes' after อนุญาต
@@ -30,7 +35,6 @@
   var retryBtn = document.getElementById('mosque-retry');
   var staleEl = document.getElementById('mosque-stale');
   var noteEl = document.getElementById('geo-note');
-  var noResults = document.getElementById('no-mosque-results');
   var searchWrap = document.getElementById('mosque-search-wrap');
   var searchInput = document.getElementById('mosque-search');
   var suggestEl = document.getElementById('mosque-suggest');
@@ -39,13 +43,13 @@
   // The OSM "type/id" is the key a future check-in / RSVP will use.
   var mosques = [];
   var markersById = {};
-  var rowsById = {};
+  var mode = 'bbox';           // 'near' | 'bbox' (see top of file)
   var userPos = null;          // [lat, lng] once geolocation succeeds
   var userAccuracy = null;     // metres
   var userMarker = null;
-  var inflight = null;         // AbortController of the area request in progress
+  var inflight = null;         // AbortController of the data request in progress
   var moveTimer = null;
-  var query = '';              // active name filter ('' = มัสยิดใกล้ฉัน)
+  var query = '';              // text in the search box (filters the dropdown only)
 
   function storage(kind) {
     try { return window[kind]; } catch (e) { return null; }
@@ -63,28 +67,21 @@
     retryBtn.hidden = !withRetry;
     statusEl.hidden = !text;
   }
-  retryBtn.addEventListener('click', loadVisibleArea);
+  retryBtn.addEventListener('click', function () {
+    if (mode === 'near') loadNearest(); else loadVisibleArea();
+  });
 
-  // ---------- data: our backend, per map area ----------
-  function loadVisibleArea() {
+  // ---------- data: our backend ----------
+  // GET `url`, then hand the mosques to `onData`; a newer request (or a mode change)
+  // supersedes this one, and a failure shows the retry button without breaking the page.
+  function request(url, onData) {
     if (inflight) { inflight.superseded = true; inflight.abort(); }
-    inflight = null;
-
-    if (map.getZoom() < MIN_ZOOM) {
-      setStatus('ซูมเข้าอีกหน่อยเพื่อดูมัสยิด');
-      return;
-    }
-
     var ctrl = new AbortController();
     inflight = ctrl;
     var timer = setTimeout(function () { ctrl.abort(); }, REQUEST_TIMEOUT_MS);
     if (!mosques.length) setStatus('กำลังโหลดมัสยิด…');
 
-    var b = map.getBounds();
-    var bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()]
-      .map(function (v) { return v.toFixed(5); }).join(',');
-
-    fetch('/api/mosques/nearby?bbox=' + bbox, { signal: ctrl.signal, headers: { Accept: 'application/json' } })
+    fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -95,7 +92,7 @@
           return { id: m.id, name: m.name, lat: m.lat, lng: m.lng, dist: null };
         });
         staleEl.hidden = !data.stale;
-        render();
+        onData();
       })
       .catch(function () {
         if (ctrl.superseded) return;
@@ -107,7 +104,63 @@
       });
   }
 
+  function cancelRequest() {
+    if (inflight) { inflight.superseded = true; inflight.abort(); }
+    inflight = null;
+  }
+
+  // 'bbox' mode: whatever the map shows
+  function loadVisibleArea() {
+    if (mode !== 'bbox') return;
+    if (map.getZoom() < MIN_ZOOM) {
+      cancelRequest();
+      setStatus('ซูมเข้าอีกหน่อยเพื่อดูมัสยิด');
+      return;
+    }
+    var b = map.getBounds();
+    var bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()]
+      .map(function (v) { return v.toFixed(5); }).join(',');
+    request('/api/mosques/nearby?bbox=' + bbox, render);
+  }
+
+  // 'near' mode: the NEAREST_COUNT closest mosques, and a map that shows them and the visitor
+  function loadNearest() {
+    if (mode !== 'near' || !userPos) return;
+    request('/api/mosques/nearest?lat=' + userPos[0].toFixed(6) + '&lng=' + userPos[1].toFixed(6) +
+            '&limit=' + NEAREST_COUNT, function () {
+      render();
+      var points = [userPos].concat(mosques.map(function (m) { return [m.lat, m.lng]; }));
+      if (points.length > 1) map.fitBounds(points, { padding: [28, 28], maxZoom: 16 });
+      else map.setView(userPos, USER_ZOOM);
+    });
+  }
+
+  function enterNearMode() {
+    mode = 'near';
+    clearTimeout(moveTimer);
+    setNote('แสดง ' + NEAREST_COUNT + ' มัสยิดที่ใกล้คุณที่สุด · เลื่อนแผนที่เพื่อดูบริเวณอื่น');
+    loadNearest();
+  }
+
+  function enterBboxMode() {
+    if (mode === 'bbox') return;
+    mode = 'bbox';
+    setNote(userPos ? 'เรียงตามระยะทางจากตำแหน่งของคุณ' : 'เปิดสิทธิ์ตำแหน่งที่ตั้งเพื่อดูระยะทางจากคุณถึงแต่ละมัสยิด');
+  }
+
+  // Map moves we make ourselves (fitBounds, panning to a row) keep 'near' mode; only the
+  // visitor's own drag/zoom switches to 'bbox'. These events only come from the visitor.
+  map.on('dragstart', enterBboxMode);
+  mapEl.addEventListener('wheel', enterBboxMode, { passive: true });
+  mapEl.addEventListener('dblclick', enterBboxMode);
+  mapEl.addEventListener('touchstart', function (e) { if (e.touches.length > 1) enterBboxMode(); }, { passive: true });
+  mapEl.addEventListener('keydown', enterBboxMode);
+  mapEl.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.leaflet-control-zoom')) enterBboxMode();
+  }, true);
+
   map.on('moveend', function () {
+    if (mode !== 'bbox') return;
     clearTimeout(moveTimer);
     moveTimer = setTimeout(loadVisibleArea, MOVE_DEBOUNCE_MS);
   });
@@ -209,7 +262,6 @@
   function focusMosque(id) {
     var marker = markersById[id];
     if (!marker) return;
-    if (!markerLayer.hasLayer(marker)) markerLayer.addLayer(marker);
     mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     map.panTo(marker.getLatLng());
     marker.openPopup();
@@ -233,39 +285,23 @@
 
     markerLayer.clearLayers();
     markersById = {};
-    rowsById = {};
     Array.prototype.slice.call(listEl.querySelectorAll('.list-row')).forEach(function (r) { r.remove(); });
 
     var frag = document.createDocumentFragment();
     mosques.forEach(function (m) {
       markersById[m.id] = L.marker([m.lat, m.lng], { title: m.name }).bindPopup(popupContent(m));
-      rowsById[m.id] = buildRow(m);
-      frag.appendChild(rowsById[m.id]);
+      markerLayer.addLayer(markersById[m.id]);
+      frag.appendChild(buildRow(m));
     });
-    listEl.insertBefore(frag, noResults);
+    listEl.appendChild(frag);
 
     setStatus(mosques.length ? '' : 'ไม่พบมัสยิดในบริเวณนี้');
-    applyFilter();
     if (openId && markersById[openId]) markersById[openId].openPopup();
   }
 
-  // Name filter: hides non-matching rows AND their markers, so map and list stay in sync.
+  // Search text only narrows the dropdown; the map and list keep showing everything loaded.
   function matches(m) {
     return !query || m.name.toLowerCase().indexOf(query.toLowerCase()) !== -1;
-  }
-  function applyFilter() {
-    var visible = 0;
-    mosques.forEach(function (m) {
-      var ok = matches(m);
-      rowsById[m.id].hidden = !ok;
-      if (ok) {
-        markerLayer.addLayer(markersById[m.id]);
-        visible++;
-      } else {
-        markerLayer.removeLayer(markersById[m.id]);
-      }
-    });
-    noResults.hidden = !(query && mosques.length && visible === 0);
   }
 
   // ---------- visitor location ----------
@@ -382,9 +418,7 @@
             .addTo(map)
             .bindPopup('ตำแหน่งของคุณ');
         }
-        setNote('เรียงตามระยะทางจากตำแหน่งของคุณ');
-        if (mosques.length) render();           // distances for what is on screen now
-        map.setView(userPos, USER_ZOOM);          // moveend then loads the mosques around the visitor
+        enterNearMode();
       },
       function (err) {
         if (err.code === err.PERMISSION_DENIED) {
@@ -422,6 +456,9 @@
   var activeIndex = -1;
 
   function openSuggest() {
+    // A debounced search/geocode result can arrive after the visitor closed the list
+    // (Escape, tapped the map); only show it while they are still in the search box.
+    if (document.activeElement !== searchInput) return;
     suggestEl.hidden = false;
     searchInput.setAttribute('aria-expanded', 'true');
   }
@@ -472,7 +509,6 @@
   function useNearMe() {
     searchInput.value = '';
     query = '';
-    applyFilter();
     closeSuggest();
     searchInput.blur();   // otherwise closing the location popup refocuses the box and reopens this list
     startLocation(true);
@@ -507,11 +543,10 @@
     else if (!areas) addNote('พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อค้นหาพื้นที่');
     (Array.isArray(areas) ? areas : []).forEach(function (place) {
       addItem(place.name, place.label !== place.name ? place.label : '', '', function () {
-        // Clear the name filter so the new area's mosques aren't hidden by it.
         searchInput.value = '';
         query = '';
-        applyFilter();
         closeSuggest();
+        enterBboxMode();
         map.setView([place.lat, place.lng], USER_ZOOM);   // moveend loads that area's mosques
       });
     });
@@ -520,7 +555,6 @@
 
   function runSearch() {
     query = searchInput.value.trim();
-    applyFilter();
     if (geoCtrl) { geoCtrl.abort(); geoCtrl = null; }
     if (query.length < 2) { renderSuggest(null); return; }
 
@@ -559,14 +593,15 @@
   searchInput.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowDown') { e.preventDefault(); openSuggest(); setActive(activeIndex + 1); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIndex - 1); }
-    else if (e.key === 'Escape') { closeSuggest(); }
+    else if (e.key === 'Escape') { clearTimeout(searchTimer); closeSuggest(); searchInput.blur(); }
     else if (e.key === 'Enter') {
       e.preventDefault();
       var pick = suggestItems[activeIndex >= 0 ? activeIndex : 0];
       if (pick && !suggestEl.hidden) pick.run();
     }
   });
-  document.addEventListener('click', function (e) {
+  // pointerdown (not click) so starting to drag the map also closes the list
+  document.addEventListener('pointerdown', function (e) {
     if (!searchWrap.contains(e.target)) closeSuggest();
   });
 
