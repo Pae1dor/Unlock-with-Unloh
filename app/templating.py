@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi.templating import Jinja2Templates
 
-from app.config import APP_VERSION, TEMPLATES_DIR, TIMEZONE
+from app.config import APP_VERSION, STATIC_DIR, TEMPLATES_DIR, TIMEZONE
 from app.services.aladhan import THAI_MONTHS
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -63,6 +63,16 @@ def baht(value) -> str:
         return "0.00"
 
 
+def static_url(path: str) -> str:
+    """/static URL with the file's modified time appended, so browsers never keep
+    running a stale cached copy after the file changes."""
+    try:
+        stamp = int((STATIC_DIR / path).stat().st_mtime)
+    except OSError:
+        return f"/static/{path}"
+    return f"/static/{path}?v={stamp}"
+
+
 templates.env.filters["thai_datetime"] = thai_datetime
 templates.env.filters["thai_day"] = thai_day
 templates.env.filters["baht"] = baht
@@ -72,4 +82,5 @@ templates.env.globals["forum_categories"] = FORUM_CATEGORIES
 templates.env.globals["forum_category_labels"] = FORUM_CATEGORY_LABELS
 templates.env.globals["avatar_styles"] = AVATAR_STYLES
 templates.env.globals["app_version"] = APP_VERSION
+templates.env.globals["static_url"] = static_url
 templates.env.globals["app_name"] = "ประชาชนเพื่อพี่น้องอิสลาม"

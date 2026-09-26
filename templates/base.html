@@ -15,11 +15,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300..700&display=swap">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="{{ static_url('css/style.css') }}">
   {% block head %}{% endblock %}
 </head>
 <body>
   {% include "_icons.html" %}
+
+  {% if user and request.cookies.get('welcome') %}
+  {# Shown once right after logging in; static/js/ui.js fades it out. Tap to skip. #}
+  <div class="welcome" id="welcome" role="status">
+    <div class="welcome__logo"><svg class="ico"><use href="#i-mosque"></use></svg></div>
+    <p class="welcome__salam">อัสลามุอะลัยกุม</p>
+    <p class="welcome__name">{{ user.full_name }}</p>
+    <div class="welcome__bar"><span></span></div>
+  </div>
+  {% endif %}
 
   <div class="phone">
     {% block header %}
@@ -38,7 +48,7 @@
       {% block content %}{% endblock %}
     </main>
 
-    <div class="version-tag">Unlock with Unloh betatest ver {{ app_version }}</div>
+    <div class="version-tag">Unlock with Unloh (BETA TEST) {{ app_version }}</div>
 
     <nav class="tabbar" aria-label="เมนูหลัก">
       <a class="tab {% if active == 'home' %}is-active{% endif %}" href="/">
@@ -67,7 +77,7 @@
     </nav>
   </div>
 
-  <script src="/static/js/ui.js"></script>
+  <script src="{{ static_url('js/ui.js') }}"></script>
   {% block scripts %}{% endblock %}
   <script>
     // Browsers only allow service workers on https (or localhost); elsewhere this is skipped.

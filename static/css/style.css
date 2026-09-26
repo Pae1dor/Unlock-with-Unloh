@@ -1167,6 +1167,56 @@ button { font: inherit; }
 }
 .char-card { transition: transform .22s var(--ease), box-shadow .22s var(--ease); }
 
+/* ---------- welcome screen right after login ---------- */
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(165deg, var(--green) 0%, #0f3a23 100%);
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  /* Leaves on its own via CSS, so it can never get stuck even if JS is paused
+     (e.g. Chrome's password pop-up) or fails; ui.js only removes it / skips early. */
+  animation: welcome-out .45s 1.6s var(--ease) forwards;
+}
+.welcome.is-leaving { animation: welcome-out .3s var(--ease) forwards; }
+@keyframes welcome-out { to { opacity: 0; visibility: hidden; transform: scale(1.04); } }
+.welcome__logo {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, .14);
+  animation: welcome-pop .6s var(--ease) both;
+}
+.welcome__logo .ico { width: 44px; height: 44px; }
+.welcome__salam { margin: 20px 0 2px; font-size: 15px; opacity: .85; animation: rise .5s .15s var(--ease) both; }
+.welcome__name { margin: 0; font-size: 22px; font-weight: 700; animation: rise .5s .25s var(--ease) both; }
+.welcome__bar {
+  width: 140px;
+  height: 4px;
+  margin-top: 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  overflow: hidden;
+}
+.welcome__bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold), #f0d58c);
+  animation: welcome-fill 1.4s .1s ease-in-out forwards;
+}
+@keyframes welcome-pop { from { opacity: 0; transform: scale(.6); } }
+@keyframes welcome-fill { to { width: 100%; } }
+
 /* ---------- beta version label, bottom-right just above the tab bar ---------- */
 .version-tag {
   position: fixed;

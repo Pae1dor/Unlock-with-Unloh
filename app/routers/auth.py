@@ -13,6 +13,8 @@ from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["auth"])
 
+WELCOME_COOKIE = "welcome"
+
 
 def _safe_next(value: str | None) -> str:
     """Only allow same-site relative redirects."""
@@ -136,6 +138,8 @@ def login_submit(
         )
 
     response = RedirectResponse(_safe_next(next), status_code=303)
+    # One-shot flag: the next page shows the welcome screen, then static/js/ui.js clears it.
+    response.set_cookie(WELCOME_COOKIE, "1", max_age=60, samesite="lax", path="/")
     return _set_cookie(response, user.id)
 
 

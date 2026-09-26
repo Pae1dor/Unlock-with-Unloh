@@ -59,6 +59,17 @@
     }, 0);
   });
 
+  // Welcome screen after login: clear the one-shot cookie. The fade-out itself is
+  // a CSS animation; here we only allow tap-to-skip and drop the element afterwards.
+  var welcome = document.getElementById('welcome');
+  if (welcome) {
+    document.cookie = 'welcome=; max-age=0; path=/';
+    welcome.addEventListener('click', function () { welcome.classList.add('is-leaving'); });
+    welcome.addEventListener('animationend', function (e) {
+      if (e.animationName === 'welcome-out') welcome.remove();
+    });
+  }
+
   // Back/forward cache restores the old page with the bar still running.
   window.addEventListener('pageshow', stop);
 })();
