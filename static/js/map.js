@@ -71,8 +71,9 @@
   }
 
   // ---------- status line (loading / zoom in / error + retry) ----------
-  function setStatus(text, withRetry) {
+  function setStatus(text, withRetry, loading) {
     statusText.textContent = text || '';
+    statusEl.classList.toggle('is-loading', !!loading);
     retryBtn.hidden = !withRetry;
     statusEl.hidden = !text;
   }
@@ -88,7 +89,7 @@
     var ctrl = new AbortController();
     inflight = ctrl;
     var timer = setTimeout(function () { ctrl.abort(); }, REQUEST_TIMEOUT_MS);
-    if (!mosques.length) setStatus('กำลังโหลดมัสยิด…');
+    if (!mosques.length) setStatus('กำลังโหลดมัสยิด…', false, true);
 
     fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } })
       .then(function (res) {

@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from app.config import CITY_COOKIE
 from app.database import get_db
 from app.deps import require_user
-from app.models import Donation, ForumPost, User
+from app.models import Donation, ForumPost, User, UserOutfit
+from app.outfits import OUTFITS, RARITY_LABELS, outfits_for
 from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["profile"])
@@ -57,3 +58,37 @@ def update_profile(
     # Keep the prayer-time city in sync with the profile.
     response.set_cookie(CITY_COOKIE, quote(user.city), max_age=60 * 60 * 24 * 365, path="/")
     return response
+
+
+@router.get("/profile/outfits")
+def wardrobe(request: Request, user: User = Depends(require_user)):
+    return templates.TemplateResponse(
+        request,
+        "wardrobe.html",
+        {
+            "user": user,
+            "active": "profile",
+            "back_url": "/profile",
+            "outfits": outfits_for(user.avatar_style),
+            "rarity_labels": RARITY_LABELS,
+            "saved": request.query_params.get("saved") == "1",
+        },
+    )
+
+
+@router.post("/profile/outfit")
+def equip_outfit(
+    outfit_key: str = Form(""),
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    outfit = OUTFITS.get(outfit_key)
+    if outfit is None or outfit["gender"] != user.avatar_style:
+        # "" (or anything unknown) = back to the plain 2D mascot
+        user.outfit_choice = None
+    elif user.outfit_choice is None:
+        user.outfit_choice = UserOutfit(outfit_key=outfit_key)
+    else:
+        user.outfit_choice.outfit_key = outfit_key
+    db.commit()
+    return RedirectResponse("/profile/outfits?saved=1", status_code=303)

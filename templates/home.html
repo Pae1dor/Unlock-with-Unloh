@@ -39,8 +39,8 @@
 
 
 <section class="section">
-  <div class="mascot-card">
-    <img class="mascot-card__img" src="/static/img/mascot-{{ user.avatar_style if user else 'symbol' }}.svg"
+  <div class="mascot-card {% if user and user.outfit %}mascot-card--outfit{% endif %}">
+    <img class="mascot-card__img" src="{{ user.character_image if user else '/static/img/mascot-symbol.svg' }}"
          alt="ยินดีต้อนรับสู่ประชาชนเพื่อพี่น้องอิสลาม" width="300" height="340">
     <a class="mascot-card__shortcut mascot-card__shortcut--left" href="/mosques">
       <svg class="ico"><use href="#i-map-pin"></use></svg>
@@ -89,5 +89,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/prayer.js"></script>
+<script src="{{ static_url('js/prayer.js') }}"></script>
 {% endblock %}

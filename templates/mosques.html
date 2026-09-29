@@ -27,7 +27,7 @@
   </div>
   {# Rows are built by static/js/map.js from live OpenStreetMap data (same data as the map markers). #}
   <div class="list-card" id="mosque-list">
-    <div class="empty" id="mosque-status">
+    <div class="empty is-loading" id="mosque-status">
       <span id="mosque-status-text">กำลังโหลดมัสยิด…</span>
       <button type="button" class="status-retry" id="mosque-retry" hidden>ลองใหม่</button>
     </div>
@@ -48,5 +48,5 @@
 
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="/static/js/map.js"></script>
+<script src="{{ static_url('js/map.js') }}"></script>
 {% endblock %}

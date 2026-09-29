@@ -17,6 +17,19 @@
   <div><strong>{{ donation_count }}</strong><span>การบริจาค</span></div>
 </div>
 
+{% if user.avatar_style != 'symbol' %}
+<div class="section">
+  <a class="char-card" href="/profile/outfits">
+    <span class="char-card__img"><img src="{{ user.character_image }}" alt="ตัวละครของคุณ"></span>
+    <span class="char-card__body">
+      <span class="card__meta">ตัวละครของคุณ</span>
+      <span class="char-card__name">{{ user.outfit.name if user.outfit else 'ตัวการ์ตูนเริ่มต้น' }}</span>
+      <span class="char-card__btn">เปลี่ยนชุด</span>
+    </span>
+  </a>
+</div>
+{% endif %}
+
 <div class="section">
   <a class="link-row" href="/donation/history">
     <svg class="ico"><use href="#i-heart"></use></svg>
