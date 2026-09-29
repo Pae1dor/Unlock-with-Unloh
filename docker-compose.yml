@@ -6,9 +6,11 @@ services:
     environment:
       POSTGRES_DB: islamapp
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      # from .env (never committed). An existing volume keeps the password it was
+      # first created with, so changing it here alone locks the app out.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    # No published port: only the app container reaches the database, over the
+    # compose network. (Host port 5432 may also be taken by a local PostgreSQL.)
     volumes:
       - islamapp_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,7 +25,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/islamapp
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/islamapp
     ports:
       - "9999:9999"
     volumes:
