@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.unloh.app",
+        "sha256_cert_fingerprints": ["CD:14:B9:F8:49:7A:C3:02:AA:F7:34:13:BA:58:1F:9E:20:DD:1B:24:2D:C0:C1:E0:52:D5:69:B7:0F:3A:F3:D3"]
+      }
+    }]

@@ -10,7 +10,26 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - ./static/qr:/code/static/qr
       - islamapp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d islamapp"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: islamapp_app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/islamapp
+    ports:
+      - "9999:9999"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   islamapp_pgdata:

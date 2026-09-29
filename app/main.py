@@ -41,6 +41,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ประชาชนเพื่อพี่น้องอิสลาม", lifespan=lifespan)
 
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+def assetlinks():
+    from fastapi.responses import FileResponse
+    return FileResponse(STATIC_DIR / "assetlinks.json", media_type="application/json")
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 QR_DIR.mkdir(parents=True, exist_ok=True)
 # Windows' registry has no type for .webmanifest, so StaticFiles would send text/plain.
