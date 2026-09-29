@@ -10,7 +10,6 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./static/qr:/code/static/qr
       - islamapp_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d islamapp"]
@@ -27,6 +26,9 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/islamapp
     ports:
       - "9999:9999"
+    volumes:
+      # QR images made by `make seed` survive rebuilding the container
+      - ./static/qr:/code/static/qr
     depends_on:
       db:
         condition: service_healthy

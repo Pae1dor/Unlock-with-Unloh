@@ -8,7 +8,7 @@ help:
 	@echo make restart - restart
 	@echo make logs    - show app logs
 	@echo make seed    - insert sample data
-	@echo make admin   - create admin
+	@echo make admin EMAIL=you@example.com - make that user an admin
 
 build:
 	docker compose up --build -d
@@ -33,4 +33,7 @@ seed:
 	docker compose exec app python -m app.seed
 
 admin:
-	docker compose exec app python -m app.make_admin
+ifndef EMAIL
+	$(error usage: make admin EMAIL=you@example.com)
+endif
+	docker compose exec app python -m app.make_admin $(EMAIL)
