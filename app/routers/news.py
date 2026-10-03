@@ -17,26 +17,20 @@ router = APIRouter(tags=["news"])
 THUMB_COLORS = ["#1B5E3A", "#2E7D52", "#8B6B2E", "#1F6B3A", "#2A5F8F", "#6B4C9A", "#9A3B3B"]
 
 
-@router.get("/news")
-def news_list(
-    request: Request,
-    category: str = "all",
-    db: Session = Depends(get_db),
-    user: User | None = Depends(get_current_user),
-):
-    if category not in NEWS_CATEGORY_LABELS:
-        category = "all"
-
+def list_news(db: Session, category: str) -> list[News]:
+    """News items for the ข่าวสาร view of /ummah; category "all" means no filter."""
     query = select(News).order_by(News.published_at.desc())
     if category != "all":
         query = query.where(News.category == category)
-    items = db.scalars(query).all()
+    return db.scalars(query).all()
 
-    return templates.TemplateResponse(
-        request,
-        "news_list.html",
-        {"user": user, "active": "news", "items": items, "category": category},
-    )
+
+@router.get("/news")
+def news_list(category: str = "all"):
+    # The list now lives on /ummah (ชุมชน | ข่าวสาร); old links land on the ข่าวสาร view.
+    if category not in NEWS_CATEGORY_LABELS:
+        category = "all"
+    return RedirectResponse(f"/ummah?view=news&category={category}", status_code=303)
 
 
 @router.get("/news/new")

@@ -1,4 +1,4 @@
-"""อัลกุรอาน — surah list and per-surah reader."""
+"""อัลกุรอาน — surah list, per-surah reader and the ayah of the day."""
 from fastapi import APIRouter, Depends, Request
 
 from app.deps import get_current_user
@@ -7,6 +7,23 @@ from app.services import alquran
 from app.templating import templates
 
 router = APIRouter(tags=["quran"])
+
+
+@router.get("/daily-quran")
+def daily_quran(request: Request, user: User | None = Depends(get_current_user)):
+    # The ayah itself is picked and fetched in the browser (static/js/daily-quran.js) so the
+    # page can show its own loading / error state; only the Thai surah names come from here.
+    return templates.TemplateResponse(
+        request,
+        "daily_quran.html",
+        {
+            "user": user,
+            "active": "daily_quran",
+            "surah_names_th": alquran.SURAH_NAMES_TH,
+            "api_base": alquran.BASE_URL,
+            "editions": f"{alquran.ARABIC_EDITION},{alquran.THAI_EDITION}",
+        },
+    )
 
 
 @router.get("/quran")

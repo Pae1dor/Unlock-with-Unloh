@@ -86,6 +86,28 @@ button { font: inherit; }
   cursor: pointer;
 }
 
+/* ชุมชน | ข่าวสาร toggle that takes the title's place in the top bar (อุมมะฮ์) */
+.topbar__switch {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.switch__btn {
+  padding: 6px 18px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  background: transparent;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.switch__btn:first-child { border-radius: 999px 0 0 999px; border-right-width: 0; }
+.switch__btn:last-child { border-radius: 0 999px 999px 0; }
+.switch__btn.is-active { background: #fff; border-color: #fff; color: var(--green); }
+.switch__btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
 /* ---------- home header ---------- */
 .hero {
   position: relative;
@@ -725,6 +747,55 @@ button { font: inherit; }
 .surah-head__th { font-size: 17px; font-weight: 700; margin-top: 4px; }
 .surah-head__meta { font-size: 12.5px; opacity: .85; margin-top: 4px; }
 
+/* ---------- อัลกุรอานประจำวัน ---------- */
+.daily { padding: 4px 16px 16px; }
+/* .empty.is-loading sets display:flex, which would beat the hidden attribute */
+.daily [hidden] { display: none !important; }
+.daily__date { margin: 14px 0 10px; text-align: center; font-size: 13px; color: var(--muted); }
+.daily__retry { margin-top: 10px; }
+.daily__card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.daily__head {
+  padding: 16px 14px;
+  background: linear-gradient(165deg, var(--green) 0%, #14472c 100%);
+  color: #fff;
+  text-align: center;
+}
+.daily__surah-ar { font-family: "Amiri", "Traditional Arabic", serif; font-size: 26px; line-height: 1.5; }
+.daily__surah-th { font-size: 17px; font-weight: 700; margin-top: 2px; }
+.daily__ref { font-size: 12.5px; opacity: .85; margin-top: 2px; }
+.daily__ar {
+  margin: 0;
+  padding: 20px 16px 8px;
+  /* Amiri is loaded from Google Fonts on this page only */
+  font-family: "Amiri", "Scheherazade New", "Traditional Arabic", serif;
+  font-size: 28px;
+  line-height: 2.1;
+  direction: rtl;
+  text-align: right;
+  color: #16281f;
+}
+.daily__th {
+  margin: 0 16px;
+  padding: 12px 0 16px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  color: #46524d;
+}
+.daily__link {
+  display: block;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--green);
+}
+
 /* ---------- news ---------- */
 .news-card {
   display: block;
@@ -1324,6 +1395,8 @@ button { font: inherit; }
   color: #93a09a;
 }
 .tab.is-active { color: var(--green); font-weight: 600; }
+/* long labels (อัลกุรอานประจำวัน) wrap onto two centred lines on narrow phones */
+.tab span { max-width: 100%; text-align: center; line-height: 1.25; }
 
 .tab--center { position: relative; }
 .tab__fab {

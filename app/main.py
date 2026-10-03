@@ -21,6 +21,7 @@ from app.routers import (
     prayer,
     profile,
     quran,
+    ummah,
 )
 from app.services import mosque_index
 from app.templating import templates
@@ -101,4 +102,5 @@ app.include_router(mosques.router)
 app.include_router(checkins.router)
 app.include_router(news.router)
 app.include_router(community.router)
+app.include_router(ummah.router)
 app.include_router(profile.router)
