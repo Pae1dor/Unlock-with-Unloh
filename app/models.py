@@ -10,11 +10,13 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -43,6 +45,8 @@ class User(Base):
     notify_asr: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notify_maghrib: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notify_isha: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Legacy flag, kept in sync with a system-wide "admin" row in user_roles. Never check it
+    # directly: permissions go through app/permissions.py (can / require).
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -52,6 +56,9 @@ class User(Base):
     donations: Mapped[list["Donation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     outfit_choice: Mapped["UserOutfit | None"] = relationship(cascade="all, delete-orphan")
     background_choice: Mapped["UserBackground | None"] = relationship(cascade="all, delete-orphan")
+    roles: Mapped[list["UserRole"]] = relationship(
+        foreign_keys="UserRole.user_id", back_populates="user", cascade="all, delete-orphan"
+    )
 
     @property
     def initial(self) -> str:
@@ -117,6 +124,34 @@ class UserBackground(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     background_key: Mapped[str] = mapped_column(String(40), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class UserRole(Base):
+    """A role granted to a user (app/permissions.py maps roles to what they may do).
+
+    mosque_id None = system-wide; otherwise scoped to one mosque ("osm:node/1", "app:3"; see
+    app/mosque_ids.py) for a future mosque_admin. Created on startup by create_all.
+    """
+
+    __tablename__ = "user_roles"
+    __table_args__ = (
+        UniqueConstraint("user_id", "role", "mosque_id", name="uq_user_roles_scoped"),
+        # NULLs never collide in a unique constraint, so the system-wide grant needs its own index.
+        Index(
+            "uq_user_roles_global", "user_id", "role", unique=True,
+            postgresql_where=text("mosque_id IS NULL"), sqlite_where=text("mosque_id IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)  # admin (future: mosque_admin)
+    mosque_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    granted_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id], back_populates="roles")
+    granter: Mapped["User | None"] = relationship(foreign_keys=[granted_by])
 
 
 class News(Base):
@@ -254,7 +289,8 @@ class MosqueCheckin(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    osm_id: Mapped[str] = mapped_column(String(32), index=True, nullable=False)  # "node/123", "way/456"
+    # despite the name, a prefixed mosque id: "osm:node/123" (app/mosque_ids.py)
+    osm_id: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
     # name at check-in time, so history still reads right if the OSM name changes later
     mosque_name: Mapped[str] = mapped_column(String(200), nullable=False)
     prayer_key: Mapped[str] = mapped_column(String(20), nullable=False)  # Fajr | Dhuhr | Asr | Maghrib | Isha
@@ -284,8 +320,8 @@ class PrayerLog(Base):
     status: Mapped[str] = mapped_column(String(10), nullable=False)  # on_time | qada (set by the server)
     source: Mapped[str] = mapped_column(String(10), default="manual", nullable=False)  # manual | checkin
     in_congregation: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    # OSM id of the mosque ("node/123") when source == checkin; the finder's mosques are
-    # OpenStreetMap places, not rows of the old `mosques` table.
+    # prefixed mosque id ("osm:node/123", app/mosque_ids.py) when source == checkin; the
+    # finder's mosques are OpenStreetMap places, not rows of the old `mosques` table.
     mosque_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 

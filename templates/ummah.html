@@ -6,7 +6,7 @@
   <a class="topbar__btn" href="/" aria-label="ย้อนกลับ">
     <svg class="ico"><use href="#i-back"></use></svg>
   </a>
-  {# Links so it still works without JS; static/js/ummah.js swaps the views in place. #}
+  {# Links so it still works without JS; static/js/view-switch.js swaps the views in place. #}
   <div class="topbar__switch" role="tablist" aria-label="อุมมะฮ์">
     <a class="switch__btn {% if view == 'community' %}is-active{% endif %}" role="tab"
        id="ummah-tab-community" aria-controls="ummah-community" data-view="community"
@@ -64,7 +64,7 @@
     {% endfor %}
   </div>
 
-  {% if user and user.is_admin %}
+  {% if can(user, "news.manage") %}
   <a class="fab-link" href="/news/new" style="margin-top:14px">
     <svg class="ico"><use href="#i-plus"></use></svg> สร้างข่าว
   </a>
@@ -89,5 +89,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ static_url('js/ummah.js') }}"></script>
+<script src="{{ static_url('js/view-switch.js') }}"></script>
 {% endblock %}

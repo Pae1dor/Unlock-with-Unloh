@@ -11,6 +11,7 @@ from app.config import QR_DIR, STATIC_DIR
 from app.database import init_db
 from app.deps import LoginRequired
 from app.routers import (
+    admin,
     auth as auth_router,
     checkins,
     community,
@@ -106,3 +107,4 @@ app.include_router(news.router)
 app.include_router(community.router)
 app.include_router(ummah.router)
 app.include_router(profile.router)
+app.include_router(admin.router)

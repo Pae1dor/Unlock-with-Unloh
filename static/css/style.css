@@ -103,10 +103,30 @@ button { font: inherit; }
   white-space: nowrap;
   cursor: pointer;
 }
-.switch__btn:first-child { border-radius: 999px 0 0 999px; border-right-width: 0; }
+.switch__btn:not(:last-child) { border-right-width: 0; }
+.switch__btn:first-child { border-radius: 999px 0 0 999px; }
 .switch__btn:last-child { border-radius: 0 999px 999px 0; }
 .switch__btn.is-active { background: #fff; border-color: #fff; color: var(--green); }
 .switch__btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* three short labels (/admin) must fit a 360px phone next to the back button */
+.topbar__switch--3 .switch__btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; font-size: 13.5px; }
+.topbar__spacer { flex: 0 0 36px; }
+
+/* small number badge: things waiting for an admin */
+.count-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.count-badge--corner { position: absolute; top: -4px; right: -4px; }
 
 /* ---------- home header ---------- */
 .hero {
@@ -1286,6 +1306,51 @@ button { font: inherit; }
   text-align: center;
 }
 .profile-head .avatar { margin: 0 auto 10px; background: rgba(255, 255, 255, .2); }
+.profile-head { position: relative; }
+.profile-head__admin {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+}
+.profile-head__admin .ico { width: 20px; height: 20px; }
+
+/* ---------- /admin ---------- */
+.admin-title { margin: 6px 0 12px; font-size: 16px; }
+.admin-grant { margin-bottom: 14px; }
+.admin-grant label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.admin-grant__row { display: flex; gap: 8px; }
+.admin-grant__row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+}
+.admin-grant__btn { width: auto; padding: 10px 16px; }
+.admin-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.admin-row + .admin-row { border-top: 1px solid var(--line); }
+.admin-row__body { flex: 1; min-width: 0; }
+.admin-row__name { font-weight: 600; }
+.admin-row__you { font-weight: 400; color: var(--muted); font-size: 13px; }
+.admin-row__revoke {
+  padding: 6px 14px;
+  border: 1px solid #e7c3bd;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--danger);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-row__revoke:disabled { border-color: var(--line); color: #b5bdb9; cursor: default; }
 .profile-stats { display: flex; gap: 10px; padding: 14px 16px 0; }
 .profile-stats > div {
   flex: 1;

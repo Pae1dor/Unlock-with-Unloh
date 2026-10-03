@@ -34,3 +34,8 @@ def init_db() -> None:
     from app import models  # noqa: F401  (register mappers before create_all)
 
     Base.metadata.create_all(engine)
+
+    from app import migrations
+
+    with SessionLocal() as db:
+        migrations.run(db)

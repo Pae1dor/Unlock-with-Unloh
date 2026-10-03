@@ -37,11 +37,13 @@ def require_user(request: Request, user: User | None = Depends(get_current_user)
 
 
 def require_admin(request: Request, user: User | None = Depends(get_current_user)) -> User:
-    """Same as require_user but also demands is_admin — otherwise a plain 404 (the
-    route stays invisible to non-admins rather than revealing it via a 403)."""
+    """Kept for older call sites; new code uses app.permissions.require("<action>").
+    Anonymous -> /login, non-admin -> plain 404 (the route stays invisible)."""
+    from app.permissions import can  # app.permissions imports this module
+
     if user is None:
         raise LoginRequired(next_url=str(request.url.path))
-    if not user.is_admin:
+    if not can(user, "admin.panel"):
         raise HTTPException(status_code=404)
     return user
 

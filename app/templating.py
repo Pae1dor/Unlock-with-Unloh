@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from fastapi.templating import Jinja2Templates
 
 from app.config import APP_VERSION, STATIC_DIR, TEMPLATES_DIR, TIMEZONE
+from app.permissions import can
 from app.services.aladhan import THAI_MONTHS
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -84,3 +85,5 @@ templates.env.globals["avatar_styles"] = AVATAR_STYLES
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["static_url"] = static_url
 templates.env.globals["app_name"] = "ประชาชนเพื่อพี่น้องอิสลาม"
+# can(user, "news.manage") — permission checks in templates (app/permissions.py)
+templates.env.globals["can"] = can

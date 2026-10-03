@@ -3,6 +3,9 @@
 The mosque's position always comes from our nationwide file (mosque_index), never from
 the client. The visitor's lat/lng/accuracy are used for the distance check only and are
 neither stored nor logged. Rules (window, one per prayer per day) are in services/checkin.py.
+
+The API speaks bare OSM ids ("node/123", as on the map); the database stores the prefixed
+form ("osm:node/123", app/mosque_ids.py).
 """
 import logging
 from datetime import timedelta
@@ -12,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app import mosque_ids
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import MosqueCheckin, User
@@ -82,7 +86,7 @@ def checkin_status(
         done = mine.get((current.prayer_key, current.prayer_date))
         if done is None:
             out[osm_id] = {"state": "open", "prayer_key": current.prayer_key, "label": current.label}
-        elif done.osm_id == osm_id:
+        elif done.osm_id == mosque_ids.from_osm(osm_id):
             out[osm_id] = {"state": "done", "prayer_key": current.prayer_key, "label": current.label,
                            "message": f"เช็คอินแล้ว ✓ ({current.label})"}
         else:
@@ -118,7 +122,7 @@ def create_checkin(
         raise _fail(409, "closed", _closed_message(upcoming), opens_at=f"{upcoming.opens:%H:%M}")
 
     def already(existing: MosqueCheckin) -> HTTPException:
-        if existing.osm_id == body.osm_id:
+        if existing.osm_id == mosque_ids.from_osm(body.osm_id):
             return _fail(409, "done", f"เช็คอินแล้ว ✓ ({current.label})")
         return _fail(409, "done_elsewhere", f"เช็คอินเวลานี้แล้วที่ {existing.mosque_name}",
                      at_name=existing.mosque_name)
@@ -130,7 +134,7 @@ def create_checkin(
 
     row = MosqueCheckin(
         user_id=user.id,
-        osm_id=body.osm_id,
+        osm_id=mosque_ids.from_osm(body.osm_id),
         mosque_name=mosque["name"],
         prayer_key=current.prayer_key,
         prayer_date=current.prayer_date,
@@ -156,7 +160,7 @@ def create_checkin(
 
     return {
         "state": "done",
-        "osm_id": row.osm_id,
+        "osm_id": body.osm_id,
         "mosque_name": row.mosque_name,
         "prayer_key": row.prayer_key,
         "label": current.label,
