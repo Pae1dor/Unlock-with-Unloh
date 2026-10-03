@@ -10,7 +10,9 @@ from app.config import CITY_COOKIE
 from app.database import get_db
 from app.deps import get_current_user, require_user
 from app.models import Donation, ForumPost, User, UserBackground, UserOutfit
-from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, OUTFITS, RARITY_LABELS, backgrounds_list, outfits_for
+from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, DEFAULT_CHARACTER, OUTFITS, RARITY_LABELS, background_available, backgrounds_list, is_wearable, outfits_for
+from app.services import rewards
+from app.routers.prayer_log import week_for
 from app.services import prayer_log
 from app.templating import AVATAR_STYLE_KEYS, templates
 
@@ -36,7 +38,7 @@ def profile(
             "donation_count": donation_count,
             "saved": request.query_params.get("saved") == "1",
             # weekly prayer grid (read-only); the arrows fetch other weeks from /api/prayer-log/week
-            "prayer_week": prayer_log.week_summary(db, user.id, today, today),
+            "prayer_week": week_for(db, user, today, prayer_log.now_local()),
         },
     )
 
@@ -65,8 +67,14 @@ def update_profile(
 
 
 @router.get("/profile/outfits")
-def wardrobe(request: Request, user: User | None = Depends(get_current_user)):
+def wardrobe(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     avatar_style = user.avatar_style if user else "male"
+    if user:
+        rewards.grant_earned(db, user)
     return templates.TemplateResponse(
         request,
         "wardrobe.html",
@@ -74,9 +82,10 @@ def wardrobe(request: Request, user: User | None = Depends(get_current_user)):
             "user": user,
             "active": "profile",
             "back_url": "/profile" if user else "/",
-            "outfits": outfits_for(avatar_style),
+            "outfits": outfits_for(avatar_style, user.unlocked_outfits if user else set()),
             "rarity_labels": RARITY_LABELS,
-            "backgrounds": backgrounds_list(),
+            "default_image": DEFAULT_CHARACTER.get(avatar_style, DEFAULT_CHARACTER["male"]),
+            "backgrounds": backgrounds_list(user.owned_backgrounds if user else set()),
             "background": user.background if user else {"key": DEFAULT_BACKGROUND, **BACKGROUNDS[DEFAULT_BACKGROUND]},
             "saved": request.query_params.get("saved") == "1",
         },
@@ -90,14 +99,15 @@ def equip_outfit(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    if background_key in BACKGROUNDS:
+    if background_available(background_key, user.owned_backgrounds):
         if user.background_choice is None:
             user.background_choice = UserBackground(background_key=background_key)
         else:
             user.background_choice.background_key = background_key
 
     outfit = OUTFITS.get(outfit_key)
-    if outfit is None or outfit["gender"] != user.avatar_style:
+    if (outfit is None or outfit["gender"] != user.avatar_style
+            or not is_wearable(outfit_key, outfit, user.unlocked_outfits)):
         # "" (or anything unknown) = back to the plain 2D mascot
         user.outfit_choice = None
     elif user.outfit_choice is None:

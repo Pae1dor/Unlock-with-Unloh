@@ -8,9 +8,7 @@
       <p class="hero__salam">อัสลามุอะลัยกุม</p>
       <p class="hero__greeting">{{ greeting }}{% if user %}, {{ user.full_name }}{% endif %}</p>
     </div>
-    <a class="hero__bell" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
-      <svg class="ico"><use href="#i-bell"></use></svg>
-    </a>
+    {% include "_header_actions.html" %}
   </div>
   <div class="hero__dates">
     <span>{{ prayer.gregorian }}</span>

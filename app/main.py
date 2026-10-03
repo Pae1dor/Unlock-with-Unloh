@@ -16,6 +16,7 @@ from app.routers import (
     community,
     donation,
     home,
+    mailbox,
     mosques,
     news,
     prayer,
@@ -106,3 +107,4 @@ app.include_router(news.router)
 app.include_router(community.router)
 app.include_router(ummah.router)
 app.include_router(profile.router)
+app.include_router(mailbox.router)

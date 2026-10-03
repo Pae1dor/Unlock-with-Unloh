@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="{{ static_url('css/style.css') }}">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body{% if user %} data-logged-in{% endif %}>
   {% include "_icons.html" %}
 
   {% if user and request.cookies.get('welcome') %}
@@ -34,13 +34,13 @@
   <div class="phone">
     {% block header %}
     <header class="topbar">
-      <a class="topbar__btn" href="{{ back_url|default('/') }}" aria-label="ย้อนกลับ">
-        <svg class="ico"><use href="#i-back"></use></svg>
-      </a>
+      <div class="header-actions header-actions--left">
+        <a class="topbar__btn" href="{{ back_url|default('/') }}" aria-label="ย้อนกลับ">
+          <svg class="ico"><use href="#i-back"></use></svg>
+        </a>
+      </div>
       <h1 class="topbar__title">{% block page_title %}{{ app_name }}{% endblock %}</h1>
-      <a class="topbar__btn" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
-        <svg class="ico"><use href="#i-bell"></use></svg>
-      </a>
+      {% include "_header_actions.html" %}
     </header>
     {% endblock %}
 

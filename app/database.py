@@ -34,3 +34,25 @@ def init_db() -> None:
     from app import models  # noqa: F401  (register mappers before create_all)
 
     Base.metadata.create_all(engine)
+    _add_missing_columns()
+
+
+# Columns added to tables that already existed. create_all only creates missing *tables*,
+# so these are added here once, on startup (plain ADD COLUMN works on SQLite and PostgreSQL).
+_ADDED_COLUMNS = {
+    "mail": {"gift_background_key": "VARCHAR(40)"},
+}
+
+
+def _add_missing_columns() -> None:
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table, columns in _ADDED_COLUMNS.items():
+            if not inspector.has_table(table):
+                continue
+            have = {c["name"] for c in inspector.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in have:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))

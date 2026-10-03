@@ -13,6 +13,7 @@ from app.deps import get_current_user
 from app.models import PrayerLog, User
 from app.schemas import PrayerLogIn
 from app.services import prayer_log as rules
+from app.services import rewards
 
 router = APIRouter(tags=["prayer-log"])
 
@@ -54,6 +55,26 @@ def log_prayer(
     return _out(row, len(rules.logs_for_day(db, user.id, now.date())))
 
 
+@router.post("/api/prayer-log/listen")
+def log_from_listening(
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Called by the Quran player after a short listen: ticks whichever prayer's time is now."""
+    user = _owner(user)
+    now = rules.now_local()
+    result = rules.log_listen(db, user, now)
+    if result is None:
+        return {"logged": False}
+    row, created = result
+    return {
+        "logged": True,
+        "created": created,
+        "label": rules.LABELS[row.prayer],
+        **_out(row, len(rules.logs_for_day(db, user.id, row.date))),
+    }
+
+
 @router.delete("/api/prayer-log/{prayer}")
 def undo_prayer(
     prayer: str,
@@ -77,5 +98,29 @@ def prayer_week(
     db: Session = Depends(get_db),
 ):
     user = _owner(user)
-    today = rules.now_local().date()
-    return rules.week_summary(db, user.id, start or today, today)
+    now = rules.now_local()
+    return week_for(db, user, start or now.date(), now)
+
+
+def week_for(db: Session, user: User, start: date, now) -> dict:
+    """Weekly grid incl. which slots were missed; shared with the profile page."""
+    missed_today = [p for p, s in rules.day_states(db, user, now).items() if s["state"] == "missed"]
+    return rules.week_summary(db, user.id, start, now.date(),
+                              missed_today=missed_today, since=rules._tracking_since(user))
+
+
+@router.get("/api/prayer-log/alerts")
+def prayer_alerts(
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Polled by static/js/ui.js: new missed-prayer notices (each returned once, ever)
+    and the prayer whose time is about to run out, if any."""
+    if user is None:
+        return {"missed": [], "due_soon": None, "rewards": []}
+    now = rules.now_local()
+    rewards.grant_earned(db, user)
+    due = next(({"prayer": p, "label": rules.LABELS[p], "minutes_left": s["minutes_left"]}
+                for p, s in rules.day_states(db, user, now).items() if s["state"] == "due_soon"), None)
+    return {"missed": rules.new_missed_notices(db, user, now), "due_soon": due,
+            "rewards": rewards.take_new_rewards(db, user)}

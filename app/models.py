@@ -52,6 +52,8 @@ class User(Base):
     donations: Mapped[list["Donation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     outfit_choice: Mapped["UserOutfit | None"] = relationship(cascade="all, delete-orphan")
     background_choice: Mapped["UserBackground | None"] = relationship(cascade="all, delete-orphan")
+    outfit_unlocks: Mapped[list["UserOutfitUnlock"]] = relationship(cascade="all, delete-orphan")
+    background_unlocks: Mapped[list["UserBackgroundUnlock"]] = relationship(cascade="all, delete-orphan")
 
     @property
     def initial(self) -> str:
@@ -60,23 +62,45 @@ class User(Base):
     @property
     def outfit(self) -> dict | None:
         """The outfit the character wears, or None for the plain 2D mascot."""
-        from app.outfits import OUTFITS
+        from app.outfits import OUTFITS, is_wearable
 
         if self.outfit_choice is None:
             return None
-        outfit = OUTFITS.get(self.outfit_choice.outfit_key)
-        # An outfit only fits the character it was drawn for.
+        key = self.outfit_choice.outfit_key
+        outfit = OUTFITS.get(key)
+        # An outfit only fits the character it was drawn for, and must be available to them.
         if outfit is None or outfit["gender"] != self.avatar_style:
+            return None
+        if not is_wearable(key, outfit, self.unlocked_outfits):
             return None
         return {"key": self.outfit_choice.outfit_key, **outfit}
 
     @property
+    def unread_mail_count(self) -> int:
+        """Badge on the mailbox icon (every page header)."""
+        from sqlalchemy import func, select
+        from sqlalchemy.orm import object_session
+
+        db = object_session(self)
+        if db is None:
+            return 0
+        return db.scalar(select(func.count(Mail.id)).where(Mail.user_id == self.id, Mail.read_at.is_(None))) or 0
+
+    @property
+    def owned_backgrounds(self) -> set[str]:
+        return {u.background_key for u in self.background_unlocks}
+
+    @property
+    def unlocked_outfits(self) -> set[str]:
+        return {u.outfit_key for u in self.outfit_unlocks}
+
+    @property
     def background(self) -> dict:
         """Background behind the character; falls back to the default CSS scene."""
-        from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND
+        from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, background_available
 
         key = self.background_choice.background_key if self.background_choice else DEFAULT_BACKGROUND
-        if key not in BACKGROUNDS:
+        if not background_available(key, self.owned_backgrounds):  # removed, or hidden and not owned
             key = DEFAULT_BACKGROUND
         return {"key": key, **BACKGROUNDS[key]}
 
@@ -91,8 +115,10 @@ class User(Base):
         if outfit:
             return outfit["image"]
         if self.has_character:
+            from app.outfits import DEFAULT_CHARACTER
+
             # character only, transparent — the background comes from the chosen scene
-            return f"/static/img/mascot-{self.avatar_style}-char.svg"
+            return DEFAULT_CHARACTER[self.avatar_style]
         return f"/static/img/mascot-{self.avatar_style}.svg"
 
 
@@ -107,6 +133,54 @@ class UserOutfit(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     outfit_key: Mapped[str] = mapped_column(String(40), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class Mail(Base):
+    """A message in a user's mailbox (กล่องจดหมาย), optionally carrying an outfit gift.
+
+    Sent by the team (python -m app.send_gift); the gift is unlocked when the user claims it.
+    New table, created on startup by create_all.
+    """
+
+    __tablename__ = "mail"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    gift_outfit_key: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    gift_background_key: Mapped[str | None] = mapped_column(String(40), nullable=True)  # added later, see database.py
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class UserOutfitUnlock(Base):
+    """An outfit a user has earned (app/services/rewards.py); kept for good once earned.
+
+    `notified` flips once the "you got a new outfit" banner has been shown. New table.
+    """
+
+    __tablename__ = "user_outfit_unlocks"
+    __table_args__ = (UniqueConstraint("user_id", "outfit_key", name="uq_outfit_unlock_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    outfit_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    unlocked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    notified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class UserBackgroundUnlock(Base):
+    """A background a user owns (e.g. a limited one received as a mailbox gift). New table."""
+
+    __tablename__ = "user_background_unlocks"
+    __table_args__ = (UniqueConstraint("user_id", "background_key", name="uq_background_unlock_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    background_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    unlocked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
 class UserBackground(Base):
@@ -263,6 +337,22 @@ class MosqueCheckin(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     user: Mapped["User"] = relationship()
+
+
+class PrayerNotice(Base):
+    """A "you missed <prayer>" notice already raised for a user, so it is shown only once.
+
+    New table, created on startup by create_all.
+    """
+
+    __tablename__ = "prayer_notices"
+    __table_args__ = (UniqueConstraint("user_id", "date", "prayer", name="uq_prayer_notice_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    prayer: Mapped[str] = mapped_column(String(10), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
 class PrayerLog(Base):
