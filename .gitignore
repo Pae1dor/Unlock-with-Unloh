@@ -11,3 +11,8 @@ dev.db
 static/qr/*.png
 .pytest_cache/
 .DS_Store
+
+# editor / assistant tool state (per machine, not part of the app)
+.idea/
+.claude/
+.omc/
