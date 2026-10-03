@@ -11,18 +11,21 @@ from app.config import QR_DIR, STATIC_DIR
 from app.database import init_db
 from app.deps import LoginRequired
 from app.routers import (
+    admin,
     auth as auth_router,
     checkins,
     community,
     donation,
     home,
     mailbox,
+    mosque_requests,
     mosques,
     news,
     prayer,
     prayer_log,
     profile,
     quran,
+    reports,
     ummah,
 )
 from app.services import mosque_index
@@ -108,3 +111,6 @@ app.include_router(community.router)
 app.include_router(ummah.router)
 app.include_router(profile.router)
 app.include_router(mailbox.router)
+app.include_router(admin.router)
+app.include_router(mosque_requests.router)
+app.include_router(reports.router)

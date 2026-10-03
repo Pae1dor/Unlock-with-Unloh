@@ -5,7 +5,12 @@
   var dots = Array.prototype.slice.call(document.querySelectorAll('.pl-dot[data-prayer]'));
   if (!dots.length) return;
 
-  var pageDay = new Date().toDateString();
+  // Today's date in Asia/Bangkok (the server's day), not the device's own time zone.
+  function bangkokDay() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date()); }
+    catch (e) { return new Date().toDateString(); }
+  }
+  var pageDay = bangkokDay();
 
   function unlockDue() {
     var now = Date.now();
@@ -22,7 +27,7 @@
   // After midnight the page shows yesterday, and a listen may have ticked something: reload.
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
-    if (new Date().toDateString() !== pageDay) window.location.reload();
+    if (bangkokDay() !== pageDay) window.location.reload();
     else unlockDue();
   });
 })();

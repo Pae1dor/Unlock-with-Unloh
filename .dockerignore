@@ -16,4 +16,5 @@ __pycache__
 .pwa_backup
 .pytest_cache
 static/qr/*.png
+uploads
 *.pdf

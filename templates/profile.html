@@ -3,6 +3,13 @@
 
 {% block header %}
 <header class="profile-head">
+  {% if admin_pending is not none %}
+  {# Only for users allowed into /admin (checked again on the server there). #}
+  <a class="profile-head__admin" href="/admin" aria-label="จัดการระบบ{% if admin_pending %} ({{ admin_pending }} เรื่องรอตรวจ){% endif %}">
+    <svg class="ico"><use href="#i-shield"></use></svg>
+    {% if admin_pending %}<span class="count-badge count-badge--corner">{{ admin_pending }}</span>{% endif %}
+  </a>
+  {% endif %}
   <div class="avatar avatar--lg">{{ user.initial }}</div>
   <div style="font-size:18px;font-weight:700">{{ user.full_name }}</div>
   <div style="font-size:13px;opacity:.85">{{ user.email }}</div>
@@ -67,6 +74,18 @@
   <a class="link-row" href="/notifications">
     <svg class="ico"><use href="#i-bell"></use></svg>
     <span>การแจ้งเตือนละหมาด</span>
+  </a>
+</div>
+
+{# Send something to the admins (reviewed at /admin) #}
+<div class="section action-pair">
+  <a class="action-pair__btn" href="/mosque-requests/new">
+    <svg class="ico"><use href="#i-mosque"></use></svg>
+    <span>เพิ่มมัสยิด</span>
+  </a>
+  <a class="action-pair__btn" href="/reports/new">
+    <svg class="ico"><use href="#i-flag"></use></svg>
+    <span>แจ้งปัญหา</span>
   </a>
 </div>
 

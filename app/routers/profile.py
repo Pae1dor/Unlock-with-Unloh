@@ -11,9 +11,9 @@ from app.database import get_db
 from app.deps import get_current_user, require_user
 from app.models import Donation, ForumPost, User, UserBackground, UserOutfit
 from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, DEFAULT_CHARACTER, OUTFITS, RARITY_LABELS, background_available, backgrounds_list, is_wearable, outfits_for
-from app.services import rewards
+from app.permissions import can
 from app.routers.prayer_log import week_for
-from app.services import prayer_log
+from app.services import admin_queue, prayer_log, rewards
 from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["profile"])
@@ -39,6 +39,8 @@ def profile(
             "saved": request.query_params.get("saved") == "1",
             # weekly prayer grid (read-only); the arrows fetch other weeks from /api/prayer-log/week
             "prayer_week": week_for(db, user, today, prayer_log.now_local()),
+            # None hides the admin icon; a number is the badge (things waiting for review)
+            "admin_pending": admin_queue.pending_counts(db)["total"] if can(user, "admin.panel") else None,
         },
     )
 

@@ -7,8 +7,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user, require_admin
+from app.deps import get_current_user
 from app.models import News, User
+from app.permissions import require
 from app.templating import NEWS_CATEGORY_LABELS, templates
 
 router = APIRouter(tags=["news"])
@@ -34,7 +35,7 @@ def news_list(category: str = "all"):
 
 
 @router.get("/news/new")
-def new_news_form(request: Request, user: User = Depends(require_admin)):
+def new_news_form(request: Request, user: User = Depends(require("news.manage"))):
     return templates.TemplateResponse(
         request,
         "news_new.html",
@@ -49,7 +50,7 @@ def create_news(
     category: str = Form("article"),
     summary: str = Form(""),
     content: str = Form(...),
-    user: User = Depends(require_admin),
+    user: User = Depends(require("news.manage")),
     db: Session = Depends(get_db),
 ):
     form = {

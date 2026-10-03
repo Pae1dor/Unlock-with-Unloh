@@ -103,10 +103,30 @@ button { font: inherit; }
   white-space: nowrap;
   cursor: pointer;
 }
-.switch__btn:first-child { border-radius: 999px 0 0 999px; border-right-width: 0; }
+.switch__btn:not(:last-child) { border-right-width: 0; }
+.switch__btn:first-child { border-radius: 999px 0 0 999px; }
 .switch__btn:last-child { border-radius: 0 999px 999px 0; }
 .switch__btn.is-active { background: #fff; border-color: #fff; color: var(--green); }
 .switch__btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* three short labels (/admin) must fit a 360px phone next to the back button */
+.topbar__switch--3 .switch__btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; font-size: 13.5px; }
+.topbar__spacer { flex: 0 0 36px; }
+
+/* small number badge: things waiting for an admin */
+.count-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.count-badge--corner { position: absolute; top: -4px; right: -4px; }
 
 /* ---------- home header ---------- */
 .hero {
@@ -1113,6 +1133,7 @@ span.pl-dot { display: inline-grid; place-items: center; cursor: default; }
 .mosque-popup { min-width: 170px; font-family: inherit; }
 .mosque-popup__name { display: block; font-size: 14px; color: var(--ink); }
 .mosque-popup__dist { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.mosque-popup__fact { display: block; margin-top: 3px; font-size: 12.5px; color: #46524d; }
 /* Leaflet colours every link in a popup blue; keep the button readable */
 .mosque-popup .btn { margin-top: 10px; padding: 8px 12px; font-size: 13.5px; color: #fff; }
 
@@ -1344,6 +1365,66 @@ span.pl-dot { display: inline-grid; place-items: center; cursor: default; }
   text-align: center;
 }
 .profile-head .avatar { margin: 0 auto 10px; background: rgba(255, 255, 255, .2); }
+.profile-head { position: relative; }
+.profile-head__admin {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+}
+.profile-head__admin .ico { width: 20px; height: 20px; }
+
+/* ---------- /admin ---------- */
+.admin-title { margin: 6px 0 12px; font-size: 16px; }
+.admin-grant { margin-bottom: 14px; }
+.admin-grant label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.admin-grant__row { display: flex; gap: 8px; }
+.admin-grant__row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+}
+.admin-grant__btn { width: auto; padding: 10px 16px; }
+.admin-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.admin-row + .admin-row { border-top: 1px solid var(--line); }
+.admin-row__body { flex: 1; min-width: 0; }
+.admin-row__name { font-weight: 600; }
+.admin-row__you { font-weight: 400; color: var(--muted); font-size: 13px; }
+.admin-row__revoke {
+  padding: 6px 14px;
+  border: 1px solid #e7c3bd;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--danger);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-row__revoke:disabled { border-color: var(--line); color: #b5bdb9; cursor: default; }
+.admin-title--sub { margin-top: 22px; }
+.admin-row.is-hidden .admin-row__name { color: var(--muted); }
+.admin-row__action {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--green);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-row__action--hide { color: var(--muted); }
 .profile-stats { display: flex; gap: 10px; padding: 14px 16px 0; }
 .profile-stats > div {
   flex: 1;
@@ -1369,6 +1450,71 @@ span.pl-dot { display: inline-grid; place-items: center; cursor: default; }
 }
 .link-row .ico { color: var(--green); }
 .link-row span { flex: 1; }
+
+/* เพิ่มมัสยิด | แจ้งปัญหา on the profile page: two equal white cards on one line */
+.action-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.action-pair__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 14px 10px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  font-weight: 600;
+}
+.action-pair__btn .ico { color: var(--green); }
+
+/* ---------- user submissions (mosque requests / reports) ---------- */
+.form-intro { margin: 16px 16px 0; font-size: 13.5px; color: var(--muted); }
+.form-intro a { color: var(--green); font-weight: 600; white-space: nowrap; }
+.field__hint { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 4px; }
+label > .field__hint { display: inline; margin: 0 0 0 4px; }
+.chip-picker--wrap { flex-wrap: wrap; }
+.pin-map { height: 260px; border-radius: 12px; border: 1px solid var(--line); overflow: hidden; z-index: 0; }
+.pin-bar { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.pin-bar__locate { width: auto; padding: 8px 14px; font-size: 13.5px; }
+.pin-bar__status { font-size: 12.5px; color: var(--green); }
+.pin-bar__status.is-error { color: var(--danger); }
+.btn:disabled { opacity: .5; cursor: default; }
+
+.sub-card { margin-bottom: 10px; }
+.sub-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.sub-card__detail, .review-card__detail { white-space: pre-line; overflow-wrap: anywhere; }
+.sub-card__note { margin: 6px 0 0; font-size: 13px; color: #7a5d22; background: var(--gold-soft); padding: 8px 10px; border-radius: 10px; }
+.sub-card__img { font-size: 13px; color: var(--green); font-weight: 600; }
+.status-pill {
+  flex: 0 0 auto;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--gold-soft);
+  color: #7a5d22;
+}
+.status-pill--approved, .status-pill--resolved { background: var(--green-soft); color: var(--green); }
+.status-pill--rejected, .status-pill--dismissed { background: #eef0ef; color: var(--muted); }
+.status-pill--cat { background: var(--green-soft); color: var(--green); margin-bottom: 6px; }
+
+/* admin review cards */
+.admin-title__n { font-size: 12.5px; font-weight: 600; color: #7a5d22; background: var(--gold-soft); padding: 2px 9px; border-radius: 999px; }
+.review-card { margin-bottom: 12px; }
+.review-card__title { margin: 0 0 4px; font-size: 16px; }
+.review-card__facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 8px 0; font-size: 13.5px; }
+.review-card__facts dt { color: var(--muted); }
+.review-card__facts dd { margin: 0; }
+.review-card__facts a { color: var(--green); font-weight: 600; }
+.review-card__warn { margin: 6px 0; padding: 8px 10px; border-radius: 10px; background: var(--gold-soft); color: #7a5d22; font-size: 13px; }
+.review-card__img img { display: block; max-width: 100%; max-height: 260px; margin: 8px 0; border-radius: 10px; border: 1px solid var(--line); }
+.review-card__actions { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; flex-wrap: wrap; }
+.review-card__actions .btn { width: auto; flex: 1; margin-top: 0; padding: 10px 14px; }
+.review-card__actions > form:last-child { flex: 1 1 100%; display: flex; }
+.review-card__reject { display: flex; gap: 8px; flex: 1 1 100%; }
+.review-card__reject input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 13.5px; }
+.review-card__reject .btn { flex: 0 0 auto; }
 
 /* ---------- character card on the profile page ---------- */
 .char-card {

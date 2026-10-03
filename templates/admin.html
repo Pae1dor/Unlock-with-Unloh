@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}จัดการระบบ — {{ app_name }}{% endblock %}
+
+{% macro badge(n) %}{% if n %}<span class="count-badge">{{ n }}</span>{% endif %}{% endmacro %}
+
+{% block header %}
+<header class="topbar">
+  <a class="topbar__btn" href="/profile" aria-label="ย้อนกลับ">
+    <svg class="ico"><use href="#i-back"></use></svg>
+  </a>
+  {# Links so it still works without JS; static/js/view-switch.js swaps the views in place. #}
+  <div class="topbar__switch topbar__switch--3" role="tablist" aria-label="จัดการระบบ">
+    {% for key, label, n in [('requests', 'คำขอมัสยิด', counts.requests), ('reports', 'รายงาน', counts.reports), ('roles', 'สิทธิ์', 0)] %}
+    <a class="switch__btn {% if view == key %}is-active{% endif %}" role="tab"
+       id="admin-tab-{{ key }}" aria-controls="admin-{{ key }}" data-view="{{ key }}"
+       aria-selected="{{ 'true' if view == key else 'false' }}"
+       href="/admin?view={{ key }}">{{ label }}{{ badge(n) }}</a>
+    {% endfor %}
+  </div>
+  <span class="topbar__spacer" aria-hidden="true"></span>
+</header>
+{% endblock %}
+
+{% block content %}
+{% if message %}<div class="notice notice--{{ message[0] }}">{{ message[1] }}</div>{% endif %}
+
+<section id="admin-requests" role="tabpanel" aria-labelledby="admin-tab-requests" {% if view != 'requests' %}hidden{% endif %}>
+  <div class="section">
+    <h2 class="admin-title">คำขอเพิ่มมัสยิด{% if requests %} <span class="admin-title__n">รอตรวจ {{ requests|length }}</span>{% endif %}</h2>
+    {% macro tri(v) %}{{ 'มี' if v is sameas true else 'ไม่มี' if v is sameas false else 'ไม่แน่ใจ' }}{% endmacro %}
+    {% for r, dup in requests %}
+    <div class="card review-card">
+      <h3 class="review-card__title">{{ r.name }}</h3>
+      {% if r.address %}<p class="card__text">{{ r.address }}</p>{% endif %}
+      <dl class="review-card__facts">
+        {% if r.opening_hours %}<dt>เวลาเปิด-ปิด</dt><dd>{{ r.opening_hours }}</dd>{% endif %}
+        <dt>ที่ละหมาดผู้หญิง</dt><dd>{{ tri(r.has_women_area) }}</dd>
+        <dt>ละหมาดญุมอะฮ์</dt><dd>{{ tri(r.has_jumuah) }}</dd>
+        <dt>ตำแหน่ง</dt>
+        <dd><a href="https://www.openstreetmap.org/?mlat={{ r.lat }}&amp;mlon={{ r.lng }}#map=18/{{ r.lat }}/{{ r.lng }}" target="_blank" rel="noopener">ดูบนแผนที่</a></dd>
+      </dl>
+      {% if dup %}<p class="review-card__warn">อาจซ้ำ: มี “{{ dup.name }}” ในแผนที่ ห่าง {{ dup.distance_m }} ม.</p>{% endif %}
+      <p class="card__meta">ส่งโดย {{ r.user.full_name }} · {{ r.created_at|thai_datetime }}</p>
+      <div class="review-card__actions">
+        <form method="post" action="/admin/mosque-requests/{{ r.id }}/reject" class="review-card__reject">
+          <input type="text" name="note" maxlength="400" placeholder="เหตุผล (ไม่บังคับ ผู้ส่งจะเห็น)">
+          <button class="btn btn--ghost" type="submit">ไม่อนุมัติ</button>
+        </form>
+        <form method="post" action="/admin/mosque-requests/{{ r.id }}/approve">
+          <button class="btn" type="submit">อนุมัติ</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <p class="empty">ยังไม่มีคำขอที่รอตรวจ</p>
+    {% endfor %}
+
+    {% if can(user, "mosque.manage") and approved %}
+    {# Approved mosques: edit or hide, never delete (check-ins and prayer logs point at "app:<id>") #}
+    <h2 class="admin-title admin-title--sub">มัสยิดที่อนุมัติแล้ว <span class="admin-title__n">{{ approved|length }}</span></h2>
+    <div class="list-card">
+      {% for m in approved %}
+      <div class="admin-row {% if not m.is_active %}is-hidden{% endif %}">
+        <div class="admin-row__body">
+          <div class="admin-row__name">{{ m.name }}</div>
+          <div class="card__meta">
+            {{ m.mosque_id }} · {% if m.is_active %}แสดงอยู่{% else %}ซ่อนอยู่{% endif %}
+            {% if m.osm_ref %} · ใช้แทนหมุด OSM{% endif %}
+          </div>
+        </div>
+        <a class="admin-row__action" href="/admin/app-mosques/{{ m.id }}">แก้ไข</a>
+        <form method="post" action="/admin/app-mosques/{{ m.id }}/visibility">
+          <input type="hidden" name="active" value="{{ '0' if m.is_active else '1' }}">
+          <button class="admin-row__action {% if m.is_active %}admin-row__action--hide{% endif %}" type="submit">{{ 'ซ่อน' if m.is_active else 'แสดง' }}</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="map-note" style="padding-left:0">ซ่อนแล้วจะหายจากแผนที่และการค้นหา แต่ประวัติเช็คอินและบันทึกละหมาดเดิมยังแสดงชื่อเหมือนเดิม</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="admin-reports" role="tabpanel" aria-labelledby="admin-tab-reports" {% if view != 'reports' %}hidden{% endif %}>
+  <div class="section">
+    <h2 class="admin-title">รายงานปัญหา{% if reports %} <span class="admin-title__n">รอตรวจ {{ reports|length }}</span>{% endif %}</h2>
+    {% for r in reports %}
+    <div class="card review-card">
+      <span class="status-pill status-pill--cat">{{ category_labels.get(r.category, r.category) }}</span>
+      <p class="card__text review-card__detail">{{ r.detail }}</p>
+      {% if r.image_name %}
+      <a class="review-card__img" href="/reports/{{ r.id }}/image" target="_blank" rel="noopener">
+        <img src="/reports/{{ r.id }}/image" alt="รูปที่แนบมากับรายงาน" loading="lazy">
+      </a>
+      {% endif %}
+      <p class="card__meta">ส่งโดย {{ r.user.full_name }} · {{ r.created_at|thai_datetime }}</p>
+      <p class="card__meta">เวอร์ชัน {{ r.app_version or '-' }}{% if r.page %} · มาจาก {{ r.page }}{% endif %}</p>
+      <form method="post" action="/admin/reports/{{ r.id }}/close" class="review-card__actions">
+        <button class="btn btn--ghost" type="submit" name="status" value="dismissed">ปิดเรื่อง</button>
+        <button class="btn" type="submit" name="status" value="resolved">แก้ไขแล้ว</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="empty">ยังไม่มีรายงานที่รอตรวจ</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="admin-roles" role="tabpanel" aria-labelledby="admin-tab-roles" {% if view != 'roles' %}hidden{% endif %}>
+  <div class="section">
+    <h2 class="admin-title">จัดการสิทธิ์</h2>
+
+    {% if can(user, "role.manage") %}
+    <form class="card admin-grant" method="post" action="/admin/roles">
+      <label class="field__label" for="grant-email">แต่งตั้ง{{ role_label }}</label>
+      <div class="admin-grant__row">
+        <input type="email" id="grant-email" name="email" required maxlength="255"
+               placeholder="อีเมลของผู้ใช้ที่มีบัญชีแล้ว" autocomplete="off">
+        <button class="btn admin-grant__btn" type="submit">แต่งตั้ง</button>
+      </div>
+    </form>
+
+    {% set last_one = admins|length <= 1 %}
+    <div class="list-card">
+      {% for grant in admins %}
+      <div class="admin-row">
+        <span class="avatar">{{ grant.user.initial }}</span>
+        <div class="admin-row__body">
+          <div class="admin-row__name">{{ grant.user.full_name }}{% if grant.user_id == user.id %} <span class="admin-row__you">(คุณ)</span>{% endif %}</div>
+          <div class="card__meta">{{ grant.user.email }}</div>
+          <div class="card__meta">
+            {{ role_label }} · ตั้งเมื่อ {{ grant.created_at|thai_day }}
+            · {% if grant.granter %}โดย {{ grant.granter.full_name }}{% else %}ตั้งผ่านคำสั่งระบบ{% endif %}
+          </div>
+        </div>
+        {% if last_one %}
+        <button class="admin-row__revoke" type="button" disabled title="ต้องมีผู้ดูแลระบบอย่างน้อย 1 คน">ถอด</button>
+        {% else %}
+        <form method="post" action="/admin/roles/{{ grant.id }}/revoke"
+              data-confirm="{% if grant.user_id == user.id %}ถอดสิทธิ์ผู้ดูแลระบบของคุณเอง? คุณจะเข้าหน้านี้ไม่ได้อีก{% else %}ถอด {{ grant.user.full_name }} ออกจากผู้ดูแลระบบ?{% endif %}">
+          <button class="admin-row__revoke" type="submit">ถอด</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if last_one %}<p class="map-note" style="padding-left:0">ต้องมีผู้ดูแลระบบอย่างน้อย 1 คน จึงถอดคนสุดท้ายไม่ได้</p>{% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_url('js/view-switch.js') }}"></script>
+<script>
+  // Revoking asks first. The question sits in data-confirm (HTML-escaped, never inlined into JS).
+  document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (!window.confirm(form.dataset.confirm)) e.preventDefault();
+    });
+  });
+</script>
+{% endblock %}

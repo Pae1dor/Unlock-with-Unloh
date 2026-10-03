@@ -1,4 +1,5 @@
-// อุมมะฮ์: the ชุมชน | ข่าวสาร toggle in the top bar swaps the two views without a reload.
+// Green-bar view toggle (อุมมะฮ์: ชุมชน | ข่าวสาร, /admin: คำขอมัสยิด | รายงาน | สิทธิ์):
+// swaps the views in place without a reload.
 (function () {
   var buttons = Array.prototype.slice.call(document.querySelectorAll('.switch__btn[data-view]'));
   if (!buttons.length) return;

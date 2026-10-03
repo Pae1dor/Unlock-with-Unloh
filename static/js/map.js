@@ -1,4 +1,5 @@
-// Mosque finder: mosques from OpenStreetMap, served by our backend.
+// Mosque finder: mosques from OpenStreetMap plus mosques added through the app
+// (approved requests, ids "app:<id>"), merged and de-duplicated by our backend.
 // Two modes:
 //   'near' — "มัสยิดใกล้ฉัน": the 10 mosques closest to the visitor (/api/mosques/nearest),
 //            wherever they are; the map is fitted to show the visitor and all 10.
@@ -59,6 +60,9 @@
   var inflight = null;         // AbortController of the data request in progress
   var moveTimer = null;
   var query = '';              // text in the search box (filters the dropdown only)
+  var appHits = [];            // app mosques matching the search, from /api/mosques/search
+  var lastAreas = null;        // last area-search state, so app hits can re-render with it
+  var pendingFocus = null;     // id to open once the area around it has loaded
 
   function storage(kind) {
     try { return window[kind]; } catch (e) { return null; }
@@ -99,10 +103,17 @@
       .then(function (data) {
         if (ctrl.superseded) return;
         mosques = (data.mosques || []).map(function (m) {
-          return { id: m.id, name: m.name, lat: m.lat, lng: m.lng, dist: null };
+          // opening_hours / women / jumuah only exist for mosques added through the app
+          return { id: m.id, name: m.name, lat: m.lat, lng: m.lng, dist: null,
+                   opening_hours: m.opening_hours || null, women: m.women, jumuah: m.jumuah };
         });
-        staleEl.hidden = !data.stale;
+        staleEl.textContent = data.osm_unavailable
+          ? 'แสดงเฉพาะมัสยิดที่เพิ่มในแอป — เซิร์ฟเวอร์แผนที่ขัดข้องชั่วคราว'
+          : 'ข้อมูลมัสยิดอาจไม่เป็นปัจจุบัน — เซิร์ฟเวอร์แผนที่ขัดข้องชั่วคราว';
+        staleEl.hidden = !(data.stale || data.osm_unavailable);
         onData();
+        // nothing at all and OSM was down: offer the retry rather than "no mosques here"
+        if (data.osm_unavailable && !mosques.length) setStatus('โหลดไม่สำเร็จ ลองใหม่', true);
       })
       .catch(function () {
         if (ctrl.superseded) return;
@@ -343,6 +354,16 @@
       dist.textContent = 'ห่างจากคุณ ' + formatDist(m.dist);
       box.appendChild(dist);
     }
+    var facts = [];
+    if (m.opening_hours) facts.push('เวลาเปิด-ปิด: ' + m.opening_hours);
+    if (m.women === true || m.women === false) facts.push('ที่ละหมาดผู้หญิง: ' + (m.women ? 'มี' : 'ไม่มี'));
+    if (m.jumuah === true || m.jumuah === false) facts.push('ละหมาดญุมอะฮ์: ' + (m.jumuah ? 'มี' : 'ไม่มี'));
+    facts.forEach(function (text) {
+      var f = document.createElement('span');
+      f.className = 'mosque-popup__fact';
+      f.textContent = text;
+      box.appendChild(f);
+    });
     var nav = document.createElement('a');
     nav.className = 'btn';
     nav.href = navUrl(m);
@@ -443,6 +464,7 @@
 
     setStatus(mosques.length ? '' : 'ไม่พบมัสยิดในบริเวณนี้');
     if (openId && markersById[openId]) markersById[openId].openPopup();
+    if (pendingFocus && markersById[pendingFocus]) { focusMosque(pendingFocus); pendingFocus = null; }
     refreshCheckinStatus();
   }
 
@@ -673,13 +695,30 @@
       return;
     }
 
+    lastAreas = areas;
     addHead('มัสยิด');
     var hits = mosques.filter(matches).slice(0, MAX_MOSQUE_SUGGESTIONS);
-    if (!hits.length) addNote('ไม่พบมัสยิดชื่อนี้ในแผนที่ตอนนี้');
+    var shown = {};
+    hits.forEach(function (m) { shown[m.id] = true; });
+    // app mosques match by name anywhere in Thailand, not just inside the current map
+    var far = appHits.filter(function (m) { return !shown[m.id]; })
+      .slice(0, Math.max(0, MAX_MOSQUE_SUGGESTIONS - hits.length));
+    if (!hits.length && !far.length) addNote('ไม่พบมัสยิดชื่อนี้ในแผนที่ตอนนี้');
     hits.forEach(function (m) {
       addItem(m.name, '', m.dist == null ? '' : formatDist(m.dist), function () {
         closeSuggest();
         focusMosque(m.id);
+      });
+    });
+    far.forEach(function (m) {
+      addItem(m.name, m.address || '', '', function () {
+        searchInput.value = '';
+        query = '';
+        closeSuggest();
+        if (markersById[m.id]) { focusMosque(m.id); return; }
+        pendingFocus = m.id;
+        enterBboxMode();
+        map.setView([m.lat, m.lng], 16);   // moveend loads that area, then render() opens it
       });
     });
 
@@ -703,12 +742,21 @@
   function runSearch() {
     query = searchInput.value.trim();
     if (geoCtrl) { geoCtrl.abort(); geoCtrl = null; }
+    appHits = [];
     if (query.length < 2) { renderSuggest(null); return; }
 
     renderSuggest('loading');
     var ctrl = new AbortController();
     geoCtrl = ctrl;
     var q = query;
+    fetch('/api/mosques/search?q=' + encodeURIComponent(q), { signal: ctrl.signal, headers: { Accept: 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : { mosques: [] }; })
+      .then(function (data) {
+        if (geoCtrl !== ctrl || q !== query) return;
+        appHits = data.mosques || [];
+        renderSuggest(lastAreas);
+      })
+      .catch(function () { /* the area search below still reports its own errors */ });
     fetch('/api/geocode?q=' + encodeURIComponent(q), { signal: ctrl.signal, headers: { Accept: 'application/json' } })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
