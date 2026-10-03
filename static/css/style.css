@@ -784,14 +784,19 @@ button { font: inherit; }
 
 /* ---------- bottom-tab FAB repurposed as whole-surah play control ---------- */
 .tab__fab--audio { cursor: pointer; }
+/* Ring hugs the outside of the FAB. Offsets count from the padding box, so they include
+   the FAB's 4px white border: (64 - 46) / 2 = 9px. It sits on the light page, not on the
+   green button, so it is drawn in green (CSS overrides the white stroke attributes). */
 .fab-progress {
   position: absolute;
-  inset: -5px;
+  top: -9px;
+  left: -9px;
   width: 64px;
   height: 64px;
   pointer-events: none;
 }
-#fab-progress-ring { transition: stroke-dashoffset .25s linear; }
+.fab-progress circle { stroke: rgba(27, 94, 58, .16); }
+#fab-progress-ring { stroke: var(--green-400); transition: stroke-dashoffset .25s linear; }
 
 /* ---------- sticky whole-surah audio bar ---------- */
 .audio-bar {
