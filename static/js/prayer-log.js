@@ -11,7 +11,12 @@
   var undoBtn = document.getElementById('pl-toast-undo');
   var toastTimer = null;
   var undoPrayer = null;
-  var pageDay = new Date().toDateString();
+  // Today's date in Asia/Bangkok (the server's day), not the device's own time zone.
+  function bangkokDay() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date()); }
+    catch (e) { return new Date().toDateString(); }
+  }
+  var pageDay = bangkokDay();
 
   function setCount(n) { if (countEl) countEl.textContent = n; }
 
@@ -104,7 +109,7 @@
   // Only today can be logged: after midnight the page shows yesterday, so reload it.
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
-    if (new Date().toDateString() !== pageDay) window.location.reload();
+    if (bangkokDay() !== pageDay) window.location.reload();
     else unlockDue();
   });
 })();

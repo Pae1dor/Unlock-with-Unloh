@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}เรื่องที่ฉันแจ้ง — {{ app_name }}{% endblock %}
+{% block page_title %}เรื่องที่ฉันแจ้ง{% endblock %}
+
+{% block content %}
+{% if sent %}<div class="notice notice--ok">ส่งเรื่องแล้ว ขอบคุณที่ช่วยแจ้ง</div>{% endif %}
+<div class="section">
+  {% for r in rows %}
+  <div class="card sub-card">
+    <div class="sub-card__top">
+      <h2 class="card__title">{{ category_labels.get(r.category, r.category) }}</h2>
+      <span class="status-pill status-pill--{{ r.status }}">{{ status_labels.get(r.status, r.status) }}</span>
+    </div>
+    <p class="card__text sub-card__detail">{{ r.detail }}</p>
+    {% if r.image_name %}<a class="sub-card__img" href="/reports/{{ r.id }}/image" target="_blank" rel="noopener">ดูรูปที่แนบ</a>{% endif %}
+    <p class="card__meta">ส่งเมื่อ {{ r.created_at|thai_datetime }}</p>
+  </div>
+  {% else %}
+  <p class="empty">ยังไม่เคยแจ้งปัญหา</p>
+  {% endfor %}
+  <a class="btn btn--ghost" href="/reports/new">แจ้งเรื่องใหม่</a>
+</div>
+{% endblock %}

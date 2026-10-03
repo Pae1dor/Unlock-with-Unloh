@@ -325,6 +325,82 @@ class PrayerLog(Base):
     mosque_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 
+class AppMosque(Base):
+    """A mosque added through the app (an approved MosqueRequest). Its id is "app:<id>".
+
+    Kept apart from the OSM file; merging these into the map (deduplicated within ~50 m,
+    app data winning) is round 4b.
+    """
+
+    __tablename__ = "app_mosques"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lng: Mapped[float] = mapped_column(Float, nullable=False)
+    address: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    opening_hours: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    has_women_area: Mapped[bool | None] = mapped_column(Boolean, nullable=True)   # None = not known
+    has_jumuah: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    @property
+    def mosque_id(self) -> str:
+        from app.mosque_ids import from_app
+
+        return from_app(self.id)
+
+
+class MosqueRequest(Base):
+    """'เพิ่มมัสยิด' from a user; an admin approves it into app_mosques or rejects it."""
+
+    __tablename__ = "mosque_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # from the pin on the map (never typed in)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lng: Mapped[float] = mapped_column(Float, nullable=False)
+    address: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    opening_hours: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    has_women_area: Mapped[bool | None] = mapped_column(Boolean, nullable=True)   # None = not sure
+    has_jumuah: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    status: Mapped[str] = mapped_column(String(12), default="pending", index=True, nullable=False)  # pending | approved | rejected
+    review_note: Mapped[str] = mapped_column(String(400), default="", nullable=False)  # shown to the sender
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    app_mosque_id: Mapped[int | None] = mapped_column(ForeignKey("app_mosques.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True, nullable=False)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+
+
+class Report(Base):
+    """'แจ้งปัญหา' from a user. target_type/target_id are for reports filed from a specific
+    post, comment or mosque later on; the round-3 form (profile page) leaves them empty."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    category: Mapped[str] = mapped_column(String(20), nullable=False)  # bug | mosque_info | content | idea
+    target_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # post | comment | mosque
+    target_id: Mapped[str | None] = mapped_column(String(40), nullable=True)     # e.g. "12", "osm:node/1"
+    detail: Mapped[str] = mapped_column(Text, nullable=False)
+    # file name under UPLOAD_DIR/reports (re-encoded, metadata stripped); private
+    image_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    app_version: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    page: Mapped[str] = mapped_column(String(300), default="", nullable=False)  # page the user came from
+    status: Mapped[str] = mapped_column(String(12), default="open", index=True, nullable=False)  # open | resolved | dismissed
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True, nullable=False)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+
+
 class DonationCampaign(Base):
     __tablename__ = "donation_campaigns"
 

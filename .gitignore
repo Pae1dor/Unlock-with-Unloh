@@ -9,6 +9,7 @@ venv/
 dev.db
 *.sqlite3
 static/qr/*.png
+uploads/
 .pytest_cache/
 .DS_Store
 

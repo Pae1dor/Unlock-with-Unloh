@@ -121,6 +121,7 @@ class NotYet(Exception):
 
 def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog:
     """Mark today's `prayer` as prayed. Tapping again returns the existing record."""
+    now = now.astimezone(ZoneInfo(TIMEZONE))   # "today" is the Bangkok calendar day
     day = now.date()
     starts = start_times(user.city, day)
     if starts is not None and now < starts[prayer]:

@@ -1377,6 +1377,71 @@ button { font: inherit; }
 .link-row .ico { color: var(--green); }
 .link-row span { flex: 1; }
 
+/* เพิ่มมัสยิด | แจ้งปัญหา on the profile page: two equal white cards on one line */
+.action-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.action-pair__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 14px 10px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  font-weight: 600;
+}
+.action-pair__btn .ico { color: var(--green); }
+
+/* ---------- user submissions (mosque requests / reports) ---------- */
+.form-intro { margin: 16px 16px 0; font-size: 13.5px; color: var(--muted); }
+.form-intro a { color: var(--green); font-weight: 600; white-space: nowrap; }
+.field__hint { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 4px; }
+label > .field__hint { display: inline; margin: 0 0 0 4px; }
+.chip-picker--wrap { flex-wrap: wrap; }
+.pin-map { height: 260px; border-radius: 12px; border: 1px solid var(--line); overflow: hidden; z-index: 0; }
+.pin-bar { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.pin-bar__locate { width: auto; padding: 8px 14px; font-size: 13.5px; }
+.pin-bar__status { font-size: 12.5px; color: var(--green); }
+.pin-bar__status.is-error { color: var(--danger); }
+.btn:disabled { opacity: .5; cursor: default; }
+
+.sub-card { margin-bottom: 10px; }
+.sub-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.sub-card__detail, .review-card__detail { white-space: pre-line; overflow-wrap: anywhere; }
+.sub-card__note { margin: 6px 0 0; font-size: 13px; color: #7a5d22; background: var(--gold-soft); padding: 8px 10px; border-radius: 10px; }
+.sub-card__img { font-size: 13px; color: var(--green); font-weight: 600; }
+.status-pill {
+  flex: 0 0 auto;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--gold-soft);
+  color: #7a5d22;
+}
+.status-pill--approved, .status-pill--resolved { background: var(--green-soft); color: var(--green); }
+.status-pill--rejected, .status-pill--dismissed { background: #eef0ef; color: var(--muted); }
+.status-pill--cat { background: var(--green-soft); color: var(--green); margin-bottom: 6px; }
+
+/* admin review cards */
+.admin-title__n { font-size: 12.5px; font-weight: 600; color: #7a5d22; background: var(--gold-soft); padding: 2px 9px; border-radius: 999px; }
+.review-card { margin-bottom: 12px; }
+.review-card__title { margin: 0 0 4px; font-size: 16px; }
+.review-card__facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 8px 0; font-size: 13.5px; }
+.review-card__facts dt { color: var(--muted); }
+.review-card__facts dd { margin: 0; }
+.review-card__facts a { color: var(--green); font-weight: 600; }
+.review-card__warn { margin: 6px 0; padding: 8px 10px; border-radius: 10px; background: var(--gold-soft); color: #7a5d22; font-size: 13px; }
+.review-card__img img { display: block; max-width: 100%; max-height: 260px; margin: 8px 0; border-radius: 10px; border: 1px solid var(--line); }
+.review-card__actions { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; flex-wrap: wrap; }
+.review-card__actions .btn { width: auto; flex: 1; margin-top: 0; padding: 10px 14px; }
+.review-card__actions > form:last-child { flex: 1 1 100%; display: flex; }
+.review-card__reject { display: flex; gap: 8px; flex: 1 1 100%; }
+.review-card__reject input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; font: inherit; font-size: 13.5px; }
+.review-card__reject .btn { flex: 0 0 auto; }
+
 /* ---------- character card on the profile page ---------- */
 .char-card {
   display: flex;
