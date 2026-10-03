@@ -28,6 +28,7 @@ ACTIONS = {
     "post.delete",            # delete forum posts / comments
     "donation.manage",        # donation campaigns
     "mosque_request.review",  # approve / reject mosque requests
+    "mosque.manage",          # edit / hide mosques added through the app (app_mosques)
     "report.review",          # handle problem reports
 }
 

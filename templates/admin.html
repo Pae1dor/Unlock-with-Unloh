@@ -54,6 +54,30 @@
     {% else %}
     <p class="empty">ยังไม่มีคำขอที่รอตรวจ</p>
     {% endfor %}
+
+    {% if can(user, "mosque.manage") and approved %}
+    {# Approved mosques: edit or hide, never delete (check-ins and prayer logs point at "app:<id>") #}
+    <h2 class="admin-title admin-title--sub">มัสยิดที่อนุมัติแล้ว <span class="admin-title__n">{{ approved|length }}</span></h2>
+    <div class="list-card">
+      {% for m in approved %}
+      <div class="admin-row {% if not m.is_active %}is-hidden{% endif %}">
+        <div class="admin-row__body">
+          <div class="admin-row__name">{{ m.name }}</div>
+          <div class="card__meta">
+            {{ m.mosque_id }} · {% if m.is_active %}แสดงอยู่{% else %}ซ่อนอยู่{% endif %}
+            {% if m.osm_ref %} · ใช้แทนหมุด OSM{% endif %}
+          </div>
+        </div>
+        <a class="admin-row__action" href="/admin/app-mosques/{{ m.id }}">แก้ไข</a>
+        <form method="post" action="/admin/app-mosques/{{ m.id }}/visibility">
+          <input type="hidden" name="active" value="{{ '0' if m.is_active else '1' }}">
+          <button class="admin-row__action {% if m.is_active %}admin-row__action--hide{% endif %}" type="submit">{{ 'ซ่อน' if m.is_active else 'แสดง' }}</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="map-note" style="padding-left:0">ซ่อนแล้วจะหายจากแผนที่และการค้นหา แต่ประวัติเช็คอินและบันทึกละหมาดเดิมยังแสดงชื่อเหมือนเดิม</p>
+    {% endif %}
   </div>
 </section>
 

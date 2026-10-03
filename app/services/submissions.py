@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.config import TIMEZONE, UPLOAD_DIR
 from app.models import AppMosque, MosqueRequest, Report, User
-from app.services import mosque_index
+from app.services import app_mosques, mosque_index
 
 DAILY_LIMIT = 5
 
@@ -111,6 +111,7 @@ def approve_request(db: Session, request_id: int, admin: User) -> AppMosque:
         name=req.name, lat=req.lat, lng=req.lng, address=req.address,
         opening_hours=req.opening_hours, has_women_area=req.has_women_area,
         has_jumuah=req.has_jumuah, approved_by=admin.id,
+        osm_ref=app_mosques.match_osm(req.lat, req.lng),   # the OSM pin it replaces, if any
     )
     db.add(mosque)
     db.flush()

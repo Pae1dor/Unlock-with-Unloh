@@ -328,8 +328,9 @@ class PrayerLog(Base):
 class AppMosque(Base):
     """A mosque added through the app (an approved MosqueRequest). Its id is "app:<id>".
 
-    Kept apart from the OSM file; merging these into the map (deduplicated within ~50 m,
-    app data winning) is round 4b.
+    Shown on the finder together with the OSM file (services/app_mosques.py): within ~50 m of
+    an OSM mosque they count as the same place and the app's data wins. Never deleted, because
+    check-ins and prayer logs point at "app:<id>"; an admin hides one with is_active=False.
     """
 
     __tablename__ = "app_mosques"
@@ -344,6 +345,11 @@ class AppMosque(Base):
     has_jumuah: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    # False = hidden from the map and search (and no new check-ins); history keeps its name.
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # The OSM mosque this one stands in for, cached so the 50 m match isn't redone per request:
+    #   None = not checked yet, "" = checked and none nearby, "osm:node/123" = that one.
+    osm_ref: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
     @property
     def mosque_id(self) -> str:

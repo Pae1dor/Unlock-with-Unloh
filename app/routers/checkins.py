@@ -4,8 +4,9 @@ The mosque's position always comes from our nationwide file (mosque_index), neve
 the client. The visitor's lat/lng/accuracy are used for the distance check only and are
 neither stored nor logged. Rules (window, one per prayer per day) are in services/checkin.py.
 
-The API speaks bare OSM ids ("node/123", as on the map); the database stores the prefixed
-form ("osm:node/123", app/mosque_ids.py).
+The API speaks finder ids ("node/123" for OSM, "app:42" for mosques added through the app);
+the database stores the prefixed form ("osm:node/123", "app:42"; app/mosque_ids.py). Hidden
+app mosques can't be checked in to, but existing check-ins keep their stored name.
 """
 import logging
 from datetime import timedelta
@@ -21,7 +22,7 @@ from app.deps import get_current_user
 from app.models import MosqueCheckin, User
 from app.schemas import CheckinIn
 from app.services import checkin as rules
-from app.services import mosque_index
+from app.services import app_mosques, mosque_index
 from app.services import prayer_log
 
 router = APIRouter(tags=["checkins"])
@@ -68,14 +69,15 @@ def checkin_status(
 ):
     """Per mosque: can the visitor check in right now, or when does it open, or have they already."""
     user = _logged_in(user)
-    _index_ready()
     ids = [i for i in dict.fromkeys(s.strip() for s in osm_ids.split(",")) if i][:MAX_STATUS_IDS]
+    if not any(mosque_ids.to_app(i) is not None for i in ids):
+        _index_ready()   # app mosques don't need the OSM file
     now = rules.now_local()
     mine = _user_checkins(db, user.id, {now.date(), now.date() - timedelta(days=1)})
 
     out = {}
     for osm_id in ids:
-        mosque = mosque_index.find(osm_id)
+        mosque = app_mosques.find(db, osm_id)
         if mosque is None:
             continue
         current, upcoming = rules.status_at(mosque["lat"], mosque["lng"], now)
@@ -86,7 +88,7 @@ def checkin_status(
         done = mine.get((current.prayer_key, current.prayer_date))
         if done is None:
             out[osm_id] = {"state": "open", "prayer_key": current.prayer_key, "label": current.label}
-        elif done.osm_id == mosque_ids.from_osm(osm_id):
+        elif done.osm_id == mosque_ids.from_api(osm_id):
             out[osm_id] = {"state": "done", "prayer_key": current.prayer_key, "label": current.label,
                            "message": f"เช็คอินแล้ว ✓ ({current.label})"}
         else:
@@ -102,8 +104,9 @@ def create_checkin(
     db: Session = Depends(get_db),
 ):
     user = _logged_in(user)
-    _index_ready()
-    mosque = mosque_index.find(body.osm_id)
+    if mosque_ids.to_app(body.osm_id) is None:
+        _index_ready()
+    mosque = app_mosques.find(db, body.osm_id)
     if mosque is None:
         raise _fail(404, "unknown_mosque", "ไม่พบมัสยิดนี้")
 
@@ -122,7 +125,7 @@ def create_checkin(
         raise _fail(409, "closed", _closed_message(upcoming), opens_at=f"{upcoming.opens:%H:%M}")
 
     def already(existing: MosqueCheckin) -> HTTPException:
-        if existing.osm_id == mosque_ids.from_osm(body.osm_id):
+        if existing.osm_id == mosque_ids.from_api(body.osm_id):
             return _fail(409, "done", f"เช็คอินแล้ว ✓ ({current.label})")
         return _fail(409, "done_elsewhere", f"เช็คอินเวลานี้แล้วที่ {existing.mosque_name}",
                      at_name=existing.mosque_name)
@@ -134,7 +137,7 @@ def create_checkin(
 
     row = MosqueCheckin(
         user_id=user.id,
-        osm_id=mosque_ids.from_osm(body.osm_id),
+        osm_id=mosque_ids.from_api(body.osm_id),
         mosque_name=mosque["name"],
         prayer_key=current.prayer_key,
         prayer_date=current.prayer_date,

@@ -3,15 +3,17 @@
 Every route here checks its permission on the server (app.permissions.require); hiding the
 entry icon on the profile page is only cosmetic. Prayer logs are private and never shown here.
 """
-from fastapi import APIRouter, Depends, Form, Request
+import math
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import MosqueRequest, Report, User
+from app.models import AppMosque, MosqueRequest, Report, User
 from app.permissions import ROLE_LABELS, can, require
-from app.services import admin_queue, roles, submissions
+from app.services import admin_queue, app_mosques, roles, submissions
 from app.templating import templates
 
 router = APIRouter(tags=["admin"])
@@ -33,7 +35,12 @@ MESSAGES = {
     "dismissed": ("ok", "ปิดเรื่องแล้ว"),
     "not_pending": ("error", "คำขอนี้ถูกตรวจไปแล้ว"),
     "not_open": ("error", "เรื่องนี้ถูกปิดไปแล้ว"),
+    "mosque_saved": ("ok", "บันทึกข้อมูลมัสยิดแล้ว"),
+    "mosque_hidden": ("ok", "ซ่อนมัสยิดจากแผนที่แล้ว ประวัติเช็คอินเดิมยังอยู่ครบ"),
+    "mosque_shown": ("ok", "แสดงมัสยิดบนแผนที่อีกครั้งแล้ว"),
 }
+
+TRI_STATE = {"yes": True, "no": False}   # anything else = not sure (None)
 
 
 @router.get("/admin")
@@ -53,6 +60,9 @@ def admin_panel(
                           .order_by(MosqueRequest.created_at)).all()
         # hint for the reviewer: an OSM mosque already within ~50 m (likely a duplicate)
         requests = [(r, submissions.nearest_osm_mosque(r.lat, r.lng)) for r in rows]
+    approved = []
+    if can(user, "mosque.manage"):
+        approved = db.scalars(select(AppMosque).order_by(AppMosque.is_active.desc(), AppMosque.created_at.desc())).all()
     reports = []
     if can(user, "report.review"):
         reports = db.scalars(select(Report).where(Report.status == "open").order_by(Report.created_at)).all()
@@ -66,6 +76,7 @@ def admin_panel(
             "counts": admin_queue.pending_counts(db),
             "admins": admins,
             "requests": requests,
+            "approved": approved,
             "reports": reports,
             "category_labels": submissions.REPORT_CATEGORY_LABELS,
             "role_label": ROLE_LABELS[roles.ADMIN],
@@ -146,3 +157,90 @@ def close_report(
     except submissions.ReviewError as e:
         return _back(str(e), "reports")
     return _back(status, "reports")
+
+
+# ---------- mosques added through the app (never deleted: check-ins point at "app:<id>") ----------
+
+def _mosque_or_404(db: Session, mosque_id: int) -> AppMosque:
+    row = db.get(AppMosque, mosque_id)
+    if row is None:
+        raise HTTPException(status_code=404)
+    return row
+
+
+def _tri(value: bool | None) -> str:
+    return "yes" if value is True else "no" if value is False else "unknown"
+
+
+def _edit_page(request: Request, user: User, row: AppMosque, form: dict, error: str | None, status: int = 200):
+    return templates.TemplateResponse(
+        request,
+        "admin_app_mosque.html",
+        {"user": user, "active": "profile", "back_url": "/admin?view=requests",
+         "mosque": row, "form": form, "error": error},
+        status_code=status,
+    )
+
+
+@router.get("/admin/app-mosques/{mosque_id}")
+def edit_app_mosque_form(
+    request: Request,
+    mosque_id: int,
+    user: User = Depends(require("mosque.manage")),
+    db: Session = Depends(get_db),
+):
+    row = _mosque_or_404(db, mosque_id)
+    form = {"name": row.name, "lat": row.lat, "lng": row.lng, "address": row.address,
+            "opening_hours": row.opening_hours, "women": _tri(row.has_women_area), "jumuah": _tri(row.has_jumuah)}
+    return _edit_page(request, user, row, form, None)
+
+
+@router.post("/admin/app-mosques/{mosque_id}")
+def edit_app_mosque(
+    request: Request,
+    mosque_id: int,
+    name: str = Form(""),
+    lat: str = Form(""),
+    lng: str = Form(""),
+    address: str = Form(""),
+    opening_hours: str = Form(""),
+    women: str = Form("unknown"),
+    jumuah: str = Form("unknown"),
+    user: User = Depends(require("mosque.manage")),
+    db: Session = Depends(get_db),
+):
+    row = _mosque_or_404(db, mosque_id)
+    form = {"name": name.strip()[:200], "lat": lat, "lng": lng, "address": address.strip()[:400],
+            "opening_hours": opening_hours.strip()[:200],
+            "women": women if women in TRI_STATE else "unknown", "jumuah": jumuah if jumuah in TRI_STATE else "unknown"}
+    if not form["name"]:
+        return _edit_page(request, user, row, form, "กรุณากรอกชื่อมัสยิด", 400)
+    try:
+        lat_f, lng_f = float(lat), float(lng)
+    except ValueError:
+        return _edit_page(request, user, row, form, "กรุณาปักหมุดตำแหน่งมัสยิดบนแผนที่", 400)
+    if not (math.isfinite(lat_f) and math.isfinite(lng_f)) or not submissions.in_thailand(lat_f, lng_f):
+        return _edit_page(request, user, row, form, "ตำแหน่งที่ปักต้องอยู่ในประเทศไทย", 400)
+
+    moved = (round(lat_f, 7), round(lng_f, 7)) != (round(row.lat, 7), round(row.lng, 7))
+    row.name, row.address, row.opening_hours = form["name"], form["address"], form["opening_hours"]
+    row.has_women_area, row.has_jumuah = TRI_STATE.get(form["women"]), TRI_STATE.get(form["jumuah"])
+    if moved:
+        row.lat, row.lng = round(lat_f, 7), round(lng_f, 7)
+        row.osm_ref = app_mosques.match_osm(row.lat, row.lng)   # it may now stand in for another OSM pin
+    db.commit()
+    return _back("mosque_saved", "requests")
+
+
+@router.post("/admin/app-mosques/{mosque_id}/visibility")
+def set_app_mosque_visibility(
+    mosque_id: int,
+    active: str = Form(...),
+    user: User = Depends(require("mosque.manage")),
+    db: Session = Depends(get_db),
+):
+    """Hide (or show again) on the map. The row stays: check-ins and prayer logs refer to it."""
+    row = _mosque_or_404(db, mosque_id)
+    row.is_active = active == "1"
+    db.commit()
+    return _back("mosque_shown" if row.is_active else "mosque_hidden", "requests")

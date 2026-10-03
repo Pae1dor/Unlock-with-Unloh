@@ -1,4 +1,4 @@
-// เพิ่มมัสยิด: pick the mosque's position by tapping the map, dragging the pin, or
+// Pick a mosque's position (เพิ่มมัสยิด, and the admin's edit page) by tapping the map, dragging the pin, or
 // "ใช้ตำแหน่งปัจจุบัน". The hidden lat/lng fields are the only way a position is sent.
 (function () {
   var el = document.getElementById('pin-map');
@@ -8,7 +8,7 @@
   var lngInput = document.getElementById('pin-lng');
   var status = document.getElementById('pin-status');
   var locateBtn = document.getElementById('pin-locate');
-  var form = document.getElementById('mosque-request-form');
+  var form = el.closest('form');
 
   var THAILAND = [13.0, 101.0];
   var map = L.map(el).setView(THAILAND, 5);

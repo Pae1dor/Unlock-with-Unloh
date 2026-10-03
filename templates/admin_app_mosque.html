@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}แก้ไขมัสยิด — {{ app_name }}{% endblock %}
+{% block page_title %}แก้ไขมัสยิด{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% macro tri(name, value) %}
+<div class="chip-picker">
+  {% for key, label in [('yes', 'มี'), ('no', 'ไม่มี'), ('unknown', 'ไม่แน่ใจ')] %}
+  <label class="chip-picker__opt">
+    <input type="radio" name="{{ name }}" value="{{ key }}" {% if value == key %}checked{% endif %}>
+    <span class="chip">{{ label }}</span>
+  </label>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<p class="form-intro">
+  {{ mosque.mosque_id }} · {% if mosque.is_active %}แสดงบนแผนที่อยู่{% else %}ซ่อนจากแผนที่อยู่{% endif %}
+  {% if mosque.osm_ref %} · ใช้แทนหมุด OSM {{ mosque.osm_ref }}{% endif %}
+</p>
+{% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+
+<form class="form" method="post" action="/admin/app-mosques/{{ mosque.id }}">
+  <div class="field">
+    <label for="name">ชื่อมัสยิด *</label>
+    <input type="text" id="name" name="name" required maxlength="200" value="{{ form.name }}">
+  </div>
+  <div class="field">
+    <label>ตำแหน่ง * <span class="field__hint">แตะแผนที่หรือลากหมุดเพื่อย้าย</span></label>
+    <div class="pin-map" id="pin-map" aria-label="แผนที่สำหรับปักหมุดตำแหน่งมัสยิด"></div>
+    <input type="hidden" name="lat" id="pin-lat" value="{{ form.lat }}">
+    <input type="hidden" name="lng" id="pin-lng" value="{{ form.lng }}">
+    <div class="pin-bar">
+      <button class="btn btn--ghost pin-bar__locate" type="button" id="pin-locate">
+        <svg class="ico"><use href="#i-map-pin"></use></svg> ใช้ตำแหน่งปัจจุบัน
+      </button>
+      <span class="pin-bar__status" id="pin-status" aria-live="polite"></span>
+    </div>
+  </div>
+  <div class="field">
+    <label for="address">ที่อยู่</label>
+    <input type="text" id="address" name="address" maxlength="400" value="{{ form.address }}">
+  </div>
+  <div class="field">
+    <label for="opening_hours">เวลาเปิด-ปิด</label>
+    <input type="text" id="opening_hours" name="opening_hours" maxlength="200" value="{{ form.opening_hours }}">
+  </div>
+  <div class="field">
+    <label>มีที่ละหมาดสำหรับผู้หญิงไหม</label>
+    {{ tri('women', form.women) }}
+  </div>
+  <div class="field">
+    <label>มีละหมาดญุมอะฮ์ไหม</label>
+    {{ tri('jumuah', form.jumuah) }}
+  </div>
+  <button class="btn" type="submit">บันทึก</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{{ static_url('js/pin-picker.js') }}"></script>
+{% endblock %}

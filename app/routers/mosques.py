@@ -9,7 +9,7 @@ from app.database import get_db
 from app.deps import get_city, get_current_user, require_user
 from app.models import Mosque, MosqueAttendance, MosqueEvent, User
 from app.schemas import MosqueOut
-from app.services import geocode, mosque_index, overpass
+from app.services import app_mosques, geocode, mosque_index, overpass
 from app.services.aladhan import get_prayer_times, now_local
 from app.templating import templates
 
@@ -126,22 +126,29 @@ def toggle_attendance(
 
 
 @router.get("/api/mosques/nearby")
-def mosques_nearby(bbox: str = Query(..., description="south,west,north,east")):
-    """OpenStreetMap mosques inside the map area.
+def mosques_nearby(bbox: str = Query(..., description="south,west,north,east"), db: Session = Depends(get_db)):
+    """Mosques inside the map area: OpenStreetMap merged with mosques added through the app.
 
-    Served from the nationwide file (app/services/mosque_index.py); until that exists,
-    from the per-tile Overpass cache (app/services/overpass.py).
+    OSM comes from the nationwide file (app/services/mosque_index.py); until that exists,
+    from the per-tile Overpass cache (app/services/overpass.py). If OSM is unavailable the
+    app's own mosques are still returned, flagged with osm_unavailable.
     """
     try:
         s, w, n, e = overpass.parse_bbox(bbox)
         overpass.check_area(s, w, n, e)
-        if mosque_index.available():
-            return {"mosques": mosque_index.in_bbox(s, w, n, e), "stale": mosque_index.is_stale()}
-        return overpass.nearby(s, w, n, e)
     except overpass.BBoxError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except overpass.UpstreamError as exc:
-        raise HTTPException(status_code=503, detail="โหลดข้อมูลมัสยิดไม่สำเร็จ") from exc
+
+    osm, stale, osm_down = [], False, False
+    try:
+        if mosque_index.available():
+            osm, stale = mosque_index.in_bbox(s, w, n, e), mosque_index.is_stale()
+        else:
+            area = overpass.nearby(s, w, n, e)
+            osm, stale = area["mosques"], area["stale"]
+    except overpass.UpstreamError:
+        osm_down = True
+    return {"mosques": app_mosques.in_bbox(db, osm, s, w, n, e), "stale": stale, "osm_unavailable": osm_down}
 
 
 NEAREST_FALLBACK_RADIUS_DEG = 0.1   # ~11 km search box while the nationwide file isn't ready
@@ -152,20 +159,29 @@ def mosques_nearest(
     lat: float = Query(..., ge=-90, le=90),
     lng: float = Query(..., ge=-180, le=180),
     limit: int = Query(10, ge=1, le=20),
+    db: Session = Depends(get_db),
 ):
     """The `limit` mosques closest to the visitor ('มัสยิดใกล้ฉัน'), each with `dist` in metres."""
+    osm, stale, osm_down = [], False, False
     if mosque_index.available():
-        return {"mosques": mosque_index.nearest(lat, lng, limit), "stale": mosque_index.is_stale()}
-    r = NEAREST_FALLBACK_RADIUS_DEG
-    try:
-        area = overpass.nearby(max(-90.0, lat - r), max(-180.0, lng - r), min(90.0, lat + r), min(180.0, lng + r))
-    except overpass.UpstreamError as exc:
-        raise HTTPException(status_code=503, detail="โหลดข้อมูลมัสยิดไม่สำเร็จ") from exc
-    ranked = sorted(
-        ({**m, "dist": round(mosque_index.haversine_m(lat, lng, m["lat"], m["lng"]), 1)} for m in area["mosques"]),
-        key=lambda m: m["dist"],
-    )
-    return {"mosques": ranked[:limit], "stale": area["stale"]}
+        # a few extra, in case app mosques stand in for some of them
+        osm, stale = mosque_index.nearest(lat, lng, limit * 2), mosque_index.is_stale()
+    else:
+        r = NEAREST_FALLBACK_RADIUS_DEG
+        try:
+            area = overpass.nearby(max(-90.0, lat - r), max(-180.0, lng - r), min(90.0, lat + r), min(180.0, lng + r))
+            osm = [{**m, "dist": round(mosque_index.haversine_m(lat, lng, m["lat"], m["lng"]), 1)} for m in area["mosques"]]
+            stale = area["stale"]
+        except overpass.UpstreamError:
+            osm_down = True
+    return {"mosques": app_mosques.nearest(db, osm, lat, lng, limit), "stale": stale, "osm_unavailable": osm_down}
+
+
+@router.get("/api/mosques/search")
+def mosques_search(q: str = Query("", max_length=100), db: Session = Depends(get_db)):
+    """Mosques added through the app whose name matches `q`, anywhere in Thailand (the finder's
+    search box; OSM mosques are matched in the browser among those already on the map)."""
+    return {"mosques": app_mosques.search(db, q)}
 
 
 @router.get("/api/geocode")
