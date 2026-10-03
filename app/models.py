@@ -265,6 +265,30 @@ class MosqueCheckin(Base):
     user: Mapped["User"] = relationship()
 
 
+class PrayerLog(Base):
+    """One of the five obligatory prayers marked as prayed (app/services/prayer_log.py).
+
+    Private to its user: only ever read back for the logged-in owner. New table, so it is
+    created on startup by create_all — existing tables and rows are untouched.
+    """
+
+    __tablename__ = "prayer_log"
+    __table_args__ = (UniqueConstraint("user_id", "date", "prayer", name="uq_prayer_log_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    # the day the prayer belongs to (an Isha check-in after midnight counts for the previous day)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    prayer: Mapped[str] = mapped_column(String(10), nullable=False)  # fajr | dhuhr | asr | maghrib | isha
+    logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    status: Mapped[str] = mapped_column(String(10), nullable=False)  # on_time | qada (set by the server)
+    source: Mapped[str] = mapped_column(String(10), default="manual", nullable=False)  # manual | checkin
+    in_congregation: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # OSM id of the mosque ("node/123") when source == checkin; the finder's mosques are
+    # OpenStreetMap places, not rows of the old `mosques` table.
+    mosque_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+
 class DonationCampaign(Base):
     __tablename__ = "donation_campaigns"
 

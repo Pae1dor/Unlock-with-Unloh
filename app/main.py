@@ -19,6 +19,7 @@ from app.routers import (
     mosques,
     news,
     prayer,
+    prayer_log,
     profile,
     quran,
     ummah,
@@ -96,6 +97,7 @@ async def not_found_handler(request: Request, exc):
 app.include_router(auth_router.router)
 app.include_router(home.router)
 app.include_router(prayer.router)
+app.include_router(prayer_log.router)
 app.include_router(quran.router)
 app.include_router(donation.router)
 app.include_router(mosques.router)

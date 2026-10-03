@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_city, get_current_user, require_user
 from app.models import User
+from app.services import prayer_log
 from app.services.aladhan import PRAYERS, get_prayer_times
 from app.templating import templates
 
@@ -41,13 +42,36 @@ def prayer_times(
     request: Request,
     user: User | None = Depends(get_current_user),
     city: str = Depends(get_city),
+    db: Session = Depends(get_db),
 ):
     prayer = get_prayer_times(city)
     return templates.TemplateResponse(
         request,
         "prayer_times.html",
-        {"user": user, "active": "home", "city": city, "prayer": prayer},
+        {"user": user, "active": "home", "city": city, "prayer": prayer,
+         "log": _prayer_log_view(db, user, city, prayer)},
     )
+
+
+def _prayer_log_view(db: Session, user: User | None, city: str, prayer: dict) -> dict | None:
+    """Today's log circles; only for a logged-in user looking at the city in their own profile."""
+    if user is None or not prayer["ok"] or not prayer_log.same_city(city, user.city):
+        return None
+    now = prayer_log.now_local()
+    starts = prayer_log.start_times(user.city, now.date()) or {}
+    logs = prayer_log.logs_for_day(db, user.id, now.date())
+    return {
+        "count": len(logs),
+        "rows": {
+            key: {
+                "log": logs.get(key),
+                # epoch ms, so the page can unlock a row when its time arrives without a reload
+                "starts_ms": int(starts[key].timestamp() * 1000) if key in starts else 0,
+                "started": key not in starts or now >= starts[key],
+            }
+            for key in prayer_log.PRAYER_KEYS
+        },
+    }
 
 
 @router.get("/notifications")
