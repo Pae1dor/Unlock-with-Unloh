@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from app.config import CITY_COOKIE
 from app.database import get_db
 from app.deps import get_current_user, require_user
-from app.models import Donation, ForumPost, User, UserOutfit
-from app.outfits import OUTFITS, RARITY_LABELS, outfits_for
+from app.models import Donation, ForumPost, User, UserBackground, UserOutfit
+from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, OUTFITS, RARITY_LABELS, backgrounds_list, outfits_for
 from app.services import prayer_log
 from app.templating import AVATAR_STYLE_KEYS, templates
 
@@ -66,7 +66,7 @@ def update_profile(
 
 @router.get("/profile/outfits")
 def wardrobe(request: Request, user: User | None = Depends(get_current_user)):
-    avatar_style = user.avatar_style if user else "boy"
+    avatar_style = user.avatar_style if user else "male"
     return templates.TemplateResponse(
         request,
         "wardrobe.html",
@@ -76,6 +76,8 @@ def wardrobe(request: Request, user: User | None = Depends(get_current_user)):
             "back_url": "/profile" if user else "/",
             "outfits": outfits_for(avatar_style),
             "rarity_labels": RARITY_LABELS,
+            "backgrounds": backgrounds_list(),
+            "background": user.background if user else {"key": DEFAULT_BACKGROUND, **BACKGROUNDS[DEFAULT_BACKGROUND]},
             "saved": request.query_params.get("saved") == "1",
         },
     )
@@ -84,9 +86,16 @@ def wardrobe(request: Request, user: User | None = Depends(get_current_user)):
 @router.post("/profile/outfit")
 def equip_outfit(
     outfit_key: str = Form(""),
+    background_key: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
+    if background_key in BACKGROUNDS:
+        if user.background_choice is None:
+            user.background_choice = UserBackground(background_key=background_key)
+        else:
+            user.background_choice.background_key = background_key
+
     outfit = OUTFITS.get(outfit_key)
     if outfit is None or outfit["gender"] != user.avatar_style:
         # "" (or anything unknown) = back to the plain 2D mascot

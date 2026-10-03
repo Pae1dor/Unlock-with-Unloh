@@ -6,11 +6,12 @@
 {% if saved %}<div class="notice notice--ok">เปลี่ยนชุดเรียบร้อยแล้ว</div>{% endif %}
 
 {% set current = user.outfit if user else None %}
-{% set avatar_style = user.avatar_style if user else 'boy' %}
+{% set avatar_style = user.avatar_style if user else 'male' %}
 
 <div class="stage-container {% if not user %}stage-container--locked{% endif %}">
-  <div class="stage">
-    <img class="stage__img" id="outfit-preview" src="{{ user.character_image if user else '/static/img/mascot-boy.svg' }}" alt="ตัวละครของคุณ">
+  <div class="stage {% if background.image %}scene-img{% endif %}" id="outfit-stage"
+       {% if background.image %}style="--bg: url('{{ background.image }}')"{% endif %}>
+    <img class="stage__img" id="outfit-preview" src="{{ user.character_image if user else '/static/img/mascot-male-char.svg' }}" alt="ตัวละครของคุณ">
   </div>
   {% if not user %}
   <div class="stage__overlay">
@@ -33,10 +34,10 @@
   <fieldset {% if not user %}disabled="disabled"{% endif %} style="border:none;padding:0;margin:0;">
     <div class="outfit-grid">
       <label class="outfit-opt">
-        <input type="radio" name="outfit_key" value="" data-image="/static/img/mascot-{{ avatar_style }}.svg"
+        <input type="radio" name="outfit_key" value="" data-image="/static/img/mascot-{{ avatar_style }}-char.svg"
                data-name="ตัวการ์ตูนเริ่มต้น" data-rarity="common" {% if not current %}checked{% endif %}>
         <span class="outfit-card">
-          <span class="outfit-card__thumb"><img src="/static/img/mascot-{{ avatar_style }}.svg" alt="" loading="lazy"></span>
+          <span class="outfit-card__thumb"><img src="/static/img/mascot-{{ avatar_style }}-char.svg" alt="" loading="lazy"></span>
           <span class="outfit-card__name">ตัวการ์ตูนเริ่มต้น</span>
         </span>
       </label>
@@ -52,8 +53,28 @@
       </label>
       {% endfor %}
     </div>
+
+    <h2 class="section__title" style="margin:20px 0 11px">พื้นหลัง</h2>
+    <div class="outfit-grid">
+      {% for bg in backgrounds %}
+      <label class="outfit-opt">
+        <input type="radio" name="background_key" value="{{ bg.key }}" data-image="{{ bg.image or '' }}"
+               {% if background.key == bg.key %}checked{% endif %}>
+        <span class="outfit-card outfit-card--{{ bg.rarity }}">
+          {% if bg.image %}
+          <span class="outfit-card__thumb outfit-card__thumb--bg"><img src="{{ bg.image }}" alt="" loading="lazy"></span>
+          {% else %}
+          <span class="outfit-card__thumb scene-thumb"></span>
+          {% endif %}
+          <span class="outfit-card__name">{{ bg.name }}</span>
+          <span class="outfit-card__rarity">{{ rarity_labels[bg.rarity] }}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+
     <button class="btn" type="submit" style="margin-top:16px" {% if not user %}disabled{% endif %}>
-      <svg class="ico"><use href="#i-user"></use></svg>ใส่ชุดนี้
+      <svg class="ico"><use href="#i-user"></use></svg>บันทึกชุดและพื้นหลัง
     </button>
   </fieldset>
 </form>
@@ -77,6 +98,17 @@
         preview.src = input.dataset.image;
         name.textContent = input.dataset.name;
         badge.hidden = input.dataset.rarity !== 'limited';
+      });
+    });
+
+    // Same for backgrounds: swap the stage behind the character.
+    var stage = document.getElementById('outfit-stage');
+    document.querySelectorAll('input[name=background_key]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var image = input.dataset.image;
+        stage.classList.toggle('scene-img', !!image);
+        if (image) stage.style.setProperty('--bg', 'url("' + image + '")');
+        else stage.style.removeProperty('--bg');
       });
     });
   })();

@@ -51,6 +51,7 @@ class User(Base):
     likes: Mapped[list["ForumLike"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     donations: Mapped[list["Donation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     outfit_choice: Mapped["UserOutfit | None"] = relationship(cascade="all, delete-orphan")
+    background_choice: Mapped["UserBackground | None"] = relationship(cascade="all, delete-orphan")
 
     @property
     def initial(self) -> str:
@@ -70,9 +71,29 @@ class User(Base):
         return {"key": self.outfit_choice.outfit_key, **outfit}
 
     @property
+    def background(self) -> dict:
+        """Background behind the character; falls back to the default CSS scene."""
+        from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND
+
+        key = self.background_choice.background_key if self.background_choice else DEFAULT_BACKGROUND
+        if key not in BACKGROUNDS:
+            key = DEFAULT_BACKGROUND
+        return {"key": key, **BACKGROUNDS[key]}
+
+    @property
+    def has_character(self) -> bool:
+        """male / female draw a character that stands on a background; "symbol" doesn't."""
+        return self.avatar_style in ("male", "female")
+
+    @property
     def character_image(self) -> str:
         outfit = self.outfit
-        return outfit["image"] if outfit else f"/static/img/mascot-{self.avatar_style}.svg"
+        if outfit:
+            return outfit["image"]
+        if self.has_character:
+            # character only, transparent — the background comes from the chosen scene
+            return f"/static/img/mascot-{self.avatar_style}-char.svg"
+        return f"/static/img/mascot-{self.avatar_style}.svg"
 
 
 class UserOutfit(Base):
@@ -85,6 +106,16 @@ class UserOutfit(Base):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     outfit_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class UserBackground(Base):
+    """Background chosen behind a user's character (one row per user; key from app/outfits.py)."""
+
+    __tablename__ = "user_backgrounds"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    background_key: Mapped[str] = mapped_column(String(40), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 
 

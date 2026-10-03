@@ -14,13 +14,37 @@ OUTFITS = {
         "gender": "male",
         "rarity": "common",
     },
+
     "street-flame": {
         "name": "เศรษฐีดูไบ",
         "image": "/static/img/Test2.png",
         "gender": "male",
+       "rarity": "limited",
+    },
+        "Girls-Muslium": {
+                "name": "ชุดโต๊ปขาว",
+                "image": "/static/img/GirlsMuslium.png",
+                "gender": "female",
+                "rarity": "common",
+            },
+}
+
+# Backgrounds behind the character. "image": None = the soft garden scene drawn in CSS
+# (.stage / .mascot-card--outfit in style.css). Image backgrounds: square, ~1200x1200,
+# keep the centre plain (the character stands there).
+BACKGROUNDS = {
+    "scene": {
+        "name": "สวนสีเขียว (เดิม)",
+        "image": None,
+        "rarity": "common",
+    },
+    "haram": {
+        "name": "มัสยิดอัลฮะรอม",
+        "image": "/static/img/BG1.png",
         "rarity": "limited",
     },
 }
+DEFAULT_BACKGROUND = "scene"
 
 RARITY_LABELS = {
     "common": "ทั่วไป",
@@ -35,3 +59,7 @@ def outfits_for(avatar_style: str) -> list[dict]:
         for key, outfit in OUTFITS.items()
         if outfit["gender"] == avatar_style
     ]
+
+
+def backgrounds_list() -> list[dict]:
+    return [{"key": key, **bg} for key, bg in BACKGROUNDS.items()]
