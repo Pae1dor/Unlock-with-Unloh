@@ -11,6 +11,7 @@ from app.database import get_db
 from app.deps import get_current_user, require_user
 from app.models import Donation, ForumPost, User, UserOutfit
 from app.outfits import OUTFITS, RARITY_LABELS, outfits_for
+from app.services import prayer_log
 from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["profile"])
@@ -24,6 +25,7 @@ def profile(
 ):
     post_count = db.scalar(select(func.count(ForumPost.id)).where(ForumPost.user_id == user.id)) or 0
     donation_count = db.scalar(select(func.count(Donation.id)).where(Donation.user_id == user.id)) or 0
+    today = prayer_log.now_local().date()
     return templates.TemplateResponse(
         request,
         "profile.html",
@@ -33,6 +35,8 @@ def profile(
             "post_count": post_count,
             "donation_count": donation_count,
             "saved": request.query_params.get("saved") == "1",
+            # weekly prayer grid (read-only); the arrows fetch other weeks from /api/prayer-log/week
+            "prayer_week": prayer_log.week_summary(db, user.id, today, today),
         },
     )
 

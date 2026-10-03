@@ -21,11 +21,25 @@
     <div class="prayer-card__date">
       <div>{{ prayer.gregorian }}</div>
       {% if prayer.hijri %}<div class="prayer-card__hijri">{{ prayer.hijri }}</div>{% endif %}
+      {% if log %}<div class="pl-count">วันนี้ <span id="pl-count">{{ log.count }}</span>/5</div>{% endif %}
     </div>
     <div class="prayer-list">
       {% for item in prayer.timings %}
-      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %}" data-prayer-key="{{ item.key }}">
-        <span class="prayer-list__name">{{ item.name_th }}</span>
+      {% set row = log.rows[item.key|lower] if log else none %}
+      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %}" data-prayer-key="{{ item.key }}">
+        <span class="prayer-list__name">
+          {% if row %}
+          {# Prayer log circle (static/js/prayer-log.js): one tap marks the prayer, no popup. #}
+          {% set entry = row.log %}
+          <button type="button" class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source == 'checkin' %} is-checkin{% endif %}{% endif %}"
+                  data-prayer="{{ item.key|lower }}" data-name="{{ item.name_th }}" data-starts="{{ row.starts_ms }}"
+                  aria-label="{% if entry %}บันทึก{{ item.name_th }}แล้ว{% elif row.started %}บันทึกละหมาด{{ item.name_th }}{% else %}ยังไม่เข้าเวลา{{ item.name_th }}{% endif %}"
+                  {% if entry or not row.started %}disabled{% endif %}>
+            <svg class="ico"><use href="#i-mosque"></use></svg>
+          </button>
+          {% endif %}
+          {{ item.name_th }}
+        </span>
         <span class="prayer-list__time">{{ item.time }}</span>
       </div>
       {% endfor %}
@@ -35,6 +49,13 @@
   <p class="map-note" style="padding-left:0">ระบบเวลาละหมาดหลักขัดข้องชั่วคราว เวลานี้คำนวณจากพิกัดจังหวัด อาจต่างจากประกาศของมัสยิดเล็กน้อย</p>
   {% endif %}
 </div>
+{% if log %}
+<div class="pl-toast" id="pl-toast" role="status" aria-live="polite" hidden>
+  <span id="pl-toast-text">บันทึกแล้ว</span>
+  <span class="pl-toast__sep" id="pl-toast-sep" aria-hidden="true">·</span>
+  <button type="button" class="pl-toast__undo" id="pl-toast-undo">ยกเลิก</button>
+</div>
+{% endif %}
 {% else %}
 <div class="notice notice--error">{{ prayer.error }}</div>
 {% endif %}
@@ -49,4 +70,5 @@
 
 {% block scripts %}
 <script src="{{ static_url('js/prayer.js') }}"></script>
+<script src="{{ static_url('js/prayer-log.js') }}"></script>
 {% endblock %}

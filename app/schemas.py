@@ -28,6 +28,12 @@ class CheckinIn(BaseModel):
     accuracy: float = Field(ge=0, le=100000)   # metres, from the Geolocation API
 
 
+class PrayerLogIn(BaseModel):
+    """Which of today's five prayers was prayed; time and status are set by the server."""
+
+    prayer: str = Field(pattern=r"^(fajr|dhuhr|asr|maghrib|isha)$")
+
+
 class MosqueOut(BaseModel):
     id: int
     name: str

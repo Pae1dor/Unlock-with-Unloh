@@ -4,6 +4,7 @@ The mosque's position always comes from our nationwide file (mosque_index), neve
 the client. The visitor's lat/lng/accuracy are used for the distance check only and are
 neither stored nor logged. Rules (window, one per prayer per day) are in services/checkin.py.
 """
+import logging
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -17,8 +18,10 @@ from app.models import MosqueCheckin, User
 from app.schemas import CheckinIn
 from app.services import checkin as rules
 from app.services import mosque_index
+from app.services import prayer_log
 
 router = APIRouter(tags=["checkins"])
+log = logging.getLogger("uvicorn.error")
 
 MAX_STATUS_IDS = 100
 
@@ -142,6 +145,15 @@ def create_checkin(
         if existing:
             raise already(existing) from None
         raise
+
+    # The check-in also marks that prayer in the user's prayer log (in congregation).
+    # The check-in itself is already saved, so a failure here must not undo it.
+    try:
+        prayer_log.record_checkin(db, user, row, now)
+    except Exception:
+        db.rollback()
+        log.exception("prayer log update after check-in failed")
+
     return {
         "state": "done",
         "osm_id": row.osm_id,

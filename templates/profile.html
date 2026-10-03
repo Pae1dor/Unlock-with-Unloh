@@ -17,6 +17,31 @@
   <div><strong>{{ donation_count }}</strong><span>การบริจาค</span></div>
 </div>
 
+{# Weekly prayer grid — view only, filled in by static/js/prayer-week.js. Private to this user. #}
+<div class="section">
+  <div class="pw-card" id="prayer-week">
+    <div class="pw-head">
+      <div>
+        <h2 class="card__title">ตารางละหมาด</h2>
+        <div class="pw-total"><span id="pw-total-label">สัปดาห์นี้</span> <strong id="pw-total"></strong></div>
+      </div>
+      <div class="pw-streak" id="pw-streak"></div>
+    </div>
+    <div class="pw-nav">
+      <button type="button" class="pw-nav__btn" id="pw-prev" aria-label="สัปดาห์ก่อน">
+        <svg class="ico"><use href="#i-back"></use></svg>
+      </button>
+      <span class="pw-nav__range" id="pw-range"></span>
+      <button type="button" class="pw-nav__btn pw-nav__btn--next" id="pw-next" aria-label="สัปดาห์ถัดไป">
+        <svg class="ico"><use href="#i-back"></use></svg>
+      </button>
+    </div>
+    <div class="pw-grid" id="pw-grid" role="grid" aria-label="ตารางละหมาดรายสัปดาห์"></div>
+    <p class="pw-detail" id="pw-detail" aria-live="polite">แตะจุดเพื่อดูรายละเอียด</p>
+  </div>
+</div>
+<script type="application/json" id="prayer-week-data">{{ prayer_week|tojson }}</script>
+
 {% if user.avatar_style != 'symbol' %}
 <div class="section">
   <a class="char-card" href="/profile/outfits">
@@ -82,4 +107,8 @@
 
   <a class="btn btn--danger" href="/logout">ออกจากระบบ</a>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_url('js/prayer-week.js') }}"></script>
 {% endblock %}
