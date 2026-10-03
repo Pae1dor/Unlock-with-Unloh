@@ -287,12 +287,20 @@ button { font: inherit; }
 
 /* character wearing an outfit (tall transparent PNG) standing in a soft scene */
 .mascot-card--outfit,
-.stage {
+.stage,
+.outfit-card__thumb.scene-thumb {
   height: 360px;
   background:
     radial-gradient(ellipse 60% 7% at 50% 94%, rgba(27, 94, 58, .18), transparent 70%),
     radial-gradient(circle at 82% 16%, #ffe6a6 0 34px, rgba(255, 230, 166, .35) 35px 58px, transparent 59px),
     linear-gradient(180deg, #eaf4ee 0%, #d9ebe0 72%, #cfe3d6 72%, #dcebe1 100%);
+}
+/* picture background (app/outfits.py BACKGROUNDS); keeps the soft shadow under the feet */
+.mascot-card--outfit.scene-img,
+.stage.scene-img {
+  background:
+    radial-gradient(ellipse 60% 7% at 50% 94%, rgba(0, 0, 0, .25), transparent 70%),
+    var(--bg) center / cover no-repeat;
 }
 .mascot-card--outfit .mascot-card__img {
   height: 100%;
@@ -1195,7 +1203,9 @@ button { font: inherit; }
   height: 120px;
   background: linear-gradient(180deg, #f1f6f3, #dfece4);
 }
+.outfit-card__thumb.scene-thumb { height: 120px; }
 .outfit-card__thumb img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; padding-top: 6px; }
+.outfit-card__thumb--bg img { object-fit: cover; object-position: center; padding-top: 0; }
 .outfit-card__name { padding: 7px 6px 8px; font-size: 12px; font-weight: 600; text-align: center; line-height: 1.3; }
 .outfit-card__rarity {
   position: absolute;

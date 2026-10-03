@@ -39,7 +39,9 @@
 
 
 <section class="section">
-  <div class="mascot-card {% if user and user.outfit %}mascot-card--outfit{% endif %} {% if not user %}mascot-card--locked{% endif %}">
+  {% set bg = user.background if user and user.has_character else None %}
+  <div class="mascot-card {% if bg %}mascot-card--outfit{% endif %} {% if bg and bg.image %}scene-img{% endif %} {% if not user %}mascot-card--locked{% endif %}"
+       {% if bg and bg.image %}style="--bg: url('{{ bg.image }}')"{% endif %}>
     <img class="mascot-card__img" src="{{ user.character_image if user else '/static/img/mascot-symbol.svg' }}"
          alt="ยินดีต้อนรับสู่ประชาชนเพื่อพี่น้องอิสลาม" width="300" height="340">
     <a class="mascot-card__shortcut mascot-card__shortcut--left" href="/mosques">

@@ -61,21 +61,21 @@
         <label for="phone">เบอร์โทรศัพท์</label>
         <input type="tel" id="phone" name="phone" maxlength="40" value="{{ user.phone or '' }}">
       </div>
-      <div class="field">
-        <label>ตัวละครของคุณ</label>
-        <div class="avatar-picker">
-          {% for value, label in avatar_styles %}
-          <label class="avatar-picker__opt">
-            <input type="radio" name="avatar_style" value="{{ value }}"
-                   {% if user.avatar_style == value %}checked{% endif %}>
-            <span class="avatar-picker__card">
-              <img src="/static/img/mascot-{{ value }}.svg" alt="{{ label }}" width="300" height="340">
-              <span class="avatar-picker__label">{{ label }}</span>
-            </span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
+<!--      <div class="field">-->
+<!--&lt;!&ndash;        <label>ตัวละครของคุณ</label>&ndash;&gt;-->
+<!--&lt;!&ndash;        <div class="avatar-picker">&ndash;&gt;-->
+<!--&lt;!&ndash;          {% for value, label in avatar_styles %}&ndash;&gt;-->
+<!--&lt;!&ndash;          <label class="avatar-picker__opt">&ndash;&gt;-->
+<!--&lt;!&ndash;            <input type="radio" name="avatar_style" value="{{ value }}"&ndash;&gt;-->
+<!--&lt;!&ndash;                   {% if user.avatar_style == value %}checked{% endif %}>&ndash;&gt;-->
+<!--&lt;!&ndash;            <span class="avatar-picker__card">&ndash;&gt;-->
+<!--&lt;!&ndash;              <img src="/static/img/mascot-{{ value }}.svg" alt="{{ label }}" width="300" height="340">&ndash;&gt;-->
+<!--&lt;!&ndash;              <span class="avatar-picker__label">{{ label }}</span>&ndash;&gt;-->
+<!--&lt;!&ndash;            </span>&ndash;&gt;-->
+<!--&lt;!&ndash;          </label>&ndash;&gt;-->
+<!--          {% endfor %}-->
+<!--        </div>-->
+<!--      </div>-->
       <button class="btn" type="submit">บันทึกข้อมูล</button>
     </form>
   </div>
