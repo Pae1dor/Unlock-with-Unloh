@@ -98,8 +98,55 @@
   <p class="empty">ยังไม่มีข่าวสาร — รัน <code>python -m app.seed</code> เพื่อเพิ่มข้อมูลตัวอย่าง</p>
   {% endfor %}
 </section>
+
+{% if popup_news %}
+{# Swipeable news pop-up, logged-in users only; static/js/news-popup.js decides whether to show it. #}
+<div class="news-pop" id="news-pop" data-user-id="{{ user.id }}" role="dialog" aria-modal="true" aria-label="ข่าวสาร" hidden>
+  <div class="news-pop__card">
+    <button class="news-pop__close" type="button" aria-label="ปิด" data-pop-close>&times;</button>
+    {% if popup_news|length > 1 %}<span class="news-pop__count" id="news-pop-count">1 / {{ popup_news|length }}</span>{% endif %}
+
+    <div class="news-pop__track" id="news-pop-track">
+      {% for item in popup_news %}
+      <article class="news-pop__slide" aria-label="ข่าว {{ loop.index }} จาก {{ popup_news|length }}">
+        <div class="news-pop__hero" style="background:{{ item.image_color }}">
+          <svg class="ico"><use href="#i-newspaper"></use></svg>
+          {% if loop.first %}<span class="news-pop__tag">ข่าวล่าสุด</span>{% endif %}
+        </div>
+        <div class="news-pop__body">
+          <span class="badge">{{ news_category_labels.get(item.category, 'ข่าวสาร') }}</span>
+          <h2 class="news-pop__title">{{ item.title }}</h2>
+          {% if item.summary %}<p class="news-pop__summary">{{ item.summary }}</p>{% endif %}
+          <p class="card__meta">{{ item.published_at|thai_day }}</p>
+          <a class="btn news-pop__read" href="/news/{{ item.id }}">อ่านต่อ</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% if popup_news|length > 1 %}
+    <div class="news-pop__nav">
+      <button class="news-pop__arrow" type="button" data-pop-step="-1" aria-label="ข่าวก่อนหน้า">&lsaquo;</button>
+      <div class="news-pop__dots">
+        {% for item in popup_news %}<button type="button" data-pop-go="{{ loop.index0 }}" aria-label="ไปข่าวที่ {{ loop.index }}"{% if loop.first %} class="is-active"{% endif %}></button>{% endfor %}
+      </div>
+      <button class="news-pop__arrow" type="button" data-pop-step="1" aria-label="ข่าวถัดไป">&rsaquo;</button>
+    </div>
+    {% endif %}
+
+    <div class="news-pop__foot">
+      <label class="news-pop__check">
+        <input type="checkbox" id="news-pop-hide-today">
+        <span>ไม่แสดงอีกภายในวันนี้</span>
+      </label>
+      <button type="button" data-pop-close>ปิด</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ static_url('js/prayer.js') }}"></script>
+<script src="{{ static_url('js/news-popup.js') }}"></script>
 {% endblock %}
