@@ -11,16 +11,22 @@ from app.config import QR_DIR, STATIC_DIR
 from app.database import init_db
 from app.deps import LoginRequired
 from app.routers import (
+    admin,
     auth as auth_router,
     checkins,
     community,
     donation,
     home,
+    mailbox,
+    mosque_requests,
     mosques,
     news,
     prayer,
+    prayer_log,
     profile,
     quran,
+    reports,
+    ummah,
 )
 from app.services import mosque_index
 from app.templating import templates
@@ -41,10 +47,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ประชาชนเพื่อพี่น้องอิสลาม", lifespan=lifespan)
 
-@app.get("/.well-known/assetlinks.json", include_in_schema=False)
-def assetlinks():
-    from fastapi.responses import FileResponse
-    return FileResponse(STATIC_DIR / "assetlinks.json", media_type="application/json")
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 QR_DIR.mkdir(parents=True, exist_ok=True)
 # Windows' registry has no type for .webmanifest, so StaticFiles would send text/plain.
@@ -60,6 +62,20 @@ async def service_worker():
         media_type="text/javascript",
         headers={"Cache-Control": "no-cache"},
     )
+
+
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+async def asset_links():
+    assetlinks_file = STATIC_DIR / "assetlinks.json"
+    if assetlinks_file.exists():
+        return FileResponse(
+            assetlinks_file,
+            media_type="application/json",
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
+    return JSONResponse(content=[], status_code=404)
+
+
 
 
 @app.exception_handler(LoginRequired)
@@ -85,10 +101,16 @@ async def not_found_handler(request: Request, exc):
 app.include_router(auth_router.router)
 app.include_router(home.router)
 app.include_router(prayer.router)
+app.include_router(prayer_log.router)
 app.include_router(quran.router)
 app.include_router(donation.router)
 app.include_router(mosques.router)
 app.include_router(checkins.router)
 app.include_router(news.router)
 app.include_router(community.router)
+app.include_router(ummah.router)
 app.include_router(profile.router)
+app.include_router(admin.router)
+app.include_router(mosque_requests.router)
+app.include_router(reports.router)
+app.include_router(mailbox.router)

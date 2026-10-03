@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}อุมมะฮ์ — {{ app_name }}{% endblock %}
+
+{% block header %}
+<header class="topbar">
+  <a class="topbar__btn" href="/" aria-label="ย้อนกลับ">
+    <svg class="ico"><use href="#i-back"></use></svg>
+  </a>
+  {# Links so it still works without JS; static/js/view-switch.js swaps the views in place. #}
+  <div class="topbar__switch" role="tablist" aria-label="อุมมะฮ์">
+    <a class="switch__btn {% if view == 'community' %}is-active{% endif %}" role="tab"
+       id="ummah-tab-community" aria-controls="ummah-community" data-view="community"
+       aria-selected="{{ 'true' if view == 'community' else 'false' }}"
+       href="/ummah?view=community&tab={{ tab }}">ชุมชน</a>
+    <a class="switch__btn {% if view == 'news' %}is-active{% endif %}" role="tab"
+       id="ummah-tab-news" aria-controls="ummah-news" data-view="news"
+       aria-selected="{{ 'true' if view == 'news' else 'false' }}"
+       href="/ummah?view=news&category={{ category }}">ข่าวสาร</a>
+  </div>
+  <a class="topbar__btn" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
+    <svg class="ico"><use href="#i-bell"></use></svg>
+  </a>
+</header>
+{% endblock %}
+
+{% block content %}
+<section id="ummah-community" role="tabpanel" aria-labelledby="ummah-tab-community" {% if view != 'community' %}hidden{% endif %}>
+  <div class="tabs">
+    <a class="chip {% if tab == 'popular' %}is-active{% endif %}" href="/ummah?view=community&tab=popular">กระทู้ยอดนิยม</a>
+    <a class="chip {% if tab == 'latest' %}is-active{% endif %}" href="/ummah?view=community&tab=latest">ล่าสุด</a>
+  </div>
+
+  <div class="section" style="padding-bottom:8px">
+    <a class="fab-link" href="/community/new" style="margin:0 0 14px">
+      <svg class="ico"><use href="#i-plus"></use></svg> สร้างกระทู้
+    </a>
+
+    {% for post in posts %}
+    <a class="post-card" href="/community/{{ post.id }}">
+      <div class="post-card__top">
+        <span class="avatar">{{ post.author.initial }}</span>
+        <div style="flex:1;min-width:0">
+          <div class="post-card__author">{{ post.author.full_name }}</div>
+          <div class="card__meta">{{ post.created_at|thai_datetime }} · {{ forum_category_labels.get(post.category, 'ทั่วไป') }}</div>
+        </div>
+      </div>
+      <h2 class="post-card__title">{{ post.title }}</h2>
+      <p class="card__text">{{ post.snippet }}</p>
+      <div class="post-card__stats">
+        <span class="stat"><svg class="ico"><use href="#i-comment"></use></svg>{{ post.comment_count }}</span>
+        <span class="stat"><svg class="ico"><use href="#i-heart"></use></svg>{{ post.like_count }}</span>
+      </div>
+    </a>
+    {% else %}
+    <p class="empty">ยังไม่มีกระทู้ในชุมชน<br>มาเริ่มกระทู้แรกกันเลย</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="ummah-news" role="tabpanel" aria-labelledby="ummah-tab-news" {% if view != 'news' %}hidden{% endif %}>
+  <div class="tabs">
+    {% for key, label in news_categories %}
+    <a class="chip {% if key == category %}is-active{% endif %}" href="/ummah?view=news&category={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if can(user, "news.manage") %}
+  <a class="fab-link" href="/news/new" style="margin-top:14px">
+    <svg class="ico"><use href="#i-plus"></use></svg> สร้างข่าว
+  </a>
+  {% endif %}
+
+  <div class="section">
+    {% for item in items %}
+    <a class="news-card news-card--compact" href="/news/{{ item.id }}">
+      <div class="news-card__thumb" style="background:{{ item.image_color }}">
+        <svg class="ico"><use href="#i-newspaper"></use></svg>
+      </div>
+      <div class="news-card__body">
+        <h2 class="news-card__title news-card__title--top">{{ item.title }}</h2>
+        <p class="card__meta">{{ item.published_at|thai_day }}</p>
+      </div>
+    </a>
+    {% else %}
+    <p class="empty">ยังไม่มีข่าวในหมวดนี้</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_url('js/view-switch.js') }}"></script>
+{% endblock %}

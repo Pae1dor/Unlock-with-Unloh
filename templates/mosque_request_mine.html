@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}คำขอเพิ่มมัสยิดของฉัน — {{ app_name }}{% endblock %}
+{% block page_title %}คำขอของฉัน{% endblock %}
+
+{% block content %}
+{% if sent %}<div class="notice notice--ok">ส่งคำขอแล้ว ผู้ดูแลระบบจะตรวจสอบเร็ว ๆ นี้</div>{% endif %}
+<div class="section">
+  {% for r in rows %}
+  <div class="card sub-card">
+    <div class="sub-card__top">
+      <h2 class="card__title">{{ r.name }}</h2>
+      <span class="status-pill status-pill--{{ r.status }}">{{ status_labels.get(r.status, r.status) }}</span>
+    </div>
+    {% if r.address %}<p class="card__text">{{ r.address }}</p>{% endif %}
+    <p class="card__meta">ส่งเมื่อ {{ r.created_at|thai_datetime }}</p>
+    {% if r.status == 'rejected' and r.review_note %}<p class="sub-card__note">หมายเหตุจากผู้ดูแล: {{ r.review_note }}</p>{% endif %}
+  </div>
+  {% else %}
+  <p class="empty">ยังไม่เคยส่งคำขอเพิ่มมัสยิด</p>
+  {% endfor %}
+  <a class="btn btn--ghost" href="/mosque-requests/new">เพิ่มมัสยิดอีก</a>
+</div>
+{% endblock %}

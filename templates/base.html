@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="{{ static_url('css/style.css') }}">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body{% if user %} data-logged-in{% endif %}>
   {% include "_icons.html" %}
 
   {% if user and request.cookies.get('welcome') %}
@@ -34,13 +34,13 @@
   <div class="phone">
     {% block header %}
     <header class="topbar">
-      <a class="topbar__btn" href="{{ back_url|default('/') }}" aria-label="ย้อนกลับ">
-        <svg class="ico"><use href="#i-back"></use></svg>
-      </a>
+      <div class="header-actions header-actions--left">
+        <a class="topbar__btn" href="{{ back_url|default('/') }}" aria-label="ย้อนกลับ">
+          <svg class="ico"><use href="#i-back"></use></svg>
+        </a>
+      </div>
       <h1 class="topbar__title">{% block page_title %}{{ app_name }}{% endblock %}</h1>
-      <a class="topbar__btn" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
-        <svg class="ico"><use href="#i-bell"></use></svg>
-      </a>
+      {% include "_header_actions.html" %}
     </header>
     {% endblock %}
 
@@ -55,9 +55,9 @@
         <svg class="ico"><use href="#i-home"></use></svg>
         <span>หน้าแรก</span>
       </a>
-      <a class="tab {% if active == 'community' %}is-active{% endif %}" href="/community">
-        <svg class="ico"><use href="#i-users"></use></svg>
-        <span>ชุมชน</span>
+      <a class="tab {% if active == 'daily_quran' %}is-active{% endif %}" href="/daily-quran">
+        <svg class="ico"><use href="#i-book"></use></svg>
+        <span>อัลกุรอานประจำวัน</span>
       </a>
       {% block center_tab %}
       <a class="tab tab--center" href="/prayer-times" aria-label="เวลาละหมาด">
@@ -66,9 +66,10 @@
         </span>
       </a>
       {% endblock %}
-      <a class="tab {% if active == 'news' %}is-active{% endif %}" href="/news">
-        <svg class="ico"><use href="#i-newspaper"></use></svg>
-        <span>ข่าวสาร</span>
+      {# ชุมชน and ข่าวสาร pages (posts, news, create forms) live under อุมมะฮ์ #}
+      <a class="tab {% if active in ('ummah', 'community', 'news') %}is-active{% endif %}" href="/ummah">
+        <svg class="ico"><use href="#i-users"></use></svg>
+        <span>อุมมะฮ์</span>
       </a>
       <a class="tab {% if active == 'profile' %}is-active{% endif %}" href="{% if user %}/profile{% else %}/login{% endif %}">
         <svg class="ico"><use href="#i-user"></use></svg>

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}เพิ่มมัสยิด — {{ app_name }}{% endblock %}
+{% block page_title %}เพิ่มมัสยิด{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% macro tri(name, value) %}
+<div class="chip-picker">
+  {% for key, label in [('yes', 'มี'), ('no', 'ไม่มี'), ('unknown', 'ไม่แน่ใจ')] %}
+  <label class="chip-picker__opt">
+    <input type="radio" name="{{ name }}" value="{{ key }}" {% if value == key %}checked{% endif %}>
+    <span class="chip">{{ label }}</span>
+  </label>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% block content %}
+  <p class="form-intro">แจ้งมัสยิดที่ยังไม่มีในแอป ผู้ดูแลระบบจะตรวจสอบก่อนเพิ่มเข้าระบบ
+    · <a href="/mosque-requests/mine">ดูที่ฉันส่ง</a></p>
+
+  {% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+  {% if remaining == 0 and not error %}<div class="notice notice--error">วันนี้ส่งครบแล้ว ส่งเพิ่มได้อีกครั้งพรุ่งนี้</div>{% endif %}
+
+  <form class="form" method="post" action="/mosque-requests/new" id="mosque-request-form">
+    <div class="field">
+      <label for="name">ชื่อมัสยิด *</label>
+      <input type="text" id="name" name="name" required maxlength="200" value="{{ form.get('name', '') }}">
+    </div>
+
+    <div class="field">
+      <label>ตำแหน่ง * <span class="field__hint">แตะแผนที่หรือลากหมุดไปที่มัสยิด</span></label>
+      {# lat/lng come only from the pin (static/js/pin-picker.js); there is no box to type them in #}
+      <div class="pin-map" id="pin-map" aria-label="แผนที่สำหรับปักหมุดตำแหน่งมัสยิด"></div>
+      <input type="hidden" name="lat" id="pin-lat" value="{{ form.get('lat', '') }}">
+      <input type="hidden" name="lng" id="pin-lng" value="{{ form.get('lng', '') }}">
+      <div class="pin-bar">
+        <button class="btn btn--ghost pin-bar__locate" type="button" id="pin-locate">
+          <svg class="ico"><use href="#i-map-pin"></use></svg> ใช้ตำแหน่งปัจจุบัน
+        </button>
+        <span class="pin-bar__status" id="pin-status" aria-live="polite">ยังไม่ได้ปักหมุด</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="address">ที่อยู่</label>
+      <input type="text" id="address" name="address" maxlength="400" value="{{ form.get('address', '') }}"
+             placeholder="เช่น ซอย ถนน ตำบล อำเภอ">
+    </div>
+    <div class="field">
+      <label for="opening_hours">เวลาเปิด-ปิด</label>
+      <input type="text" id="opening_hours" name="opening_hours" maxlength="200" value="{{ form.get('opening_hours', '') }}"
+             placeholder="เช่น เปิดทุกวัน 04:30–21:00">
+    </div>
+    <div class="field">
+      <label>มีที่ละหมาดสำหรับผู้หญิงไหม</label>
+      {{ tri('women', form.get('women', 'unknown')) }}
+    </div>
+    <div class="field">
+      <label>มีละหมาดญุมอะฮ์ไหม</label>
+      {{ tri('jumuah', form.get('jumuah', 'unknown')) }}
+    </div>
+
+    <button class="btn" type="submit" {% if remaining == 0 %}disabled{% endif %}>ส่งคำขอ</button>
+    <p class="form-foot">ส่งได้อีก {{ remaining }} เรื่องวันนี้ (รวมการแจ้งปัญหา)</p>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{{ static_url('js/pin-picker.js') }}"></script>
+{% endblock %}

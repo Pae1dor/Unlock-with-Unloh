@@ -13,16 +13,8 @@ from app.templating import FORUM_CATEGORY_LABELS, templates, thai_datetime
 router = APIRouter(tags=["community"])
 
 
-@router.get("/community")
-def community(
-    request: Request,
-    tab: str = "popular",
-    db: Session = Depends(get_db),
-    user: User | None = Depends(get_current_user),
-):
-    if tab not in ("popular", "latest"):
-        tab = "popular"
-
+def list_posts(db: Session, tab: str) -> list[ForumPost]:
+    """Forum posts for the ชุมชน view of /ummah; tab is "popular" or "latest"."""
     if tab == "popular":
         # Most-liked first; ties broken by recency.
         like_count = (
@@ -37,13 +29,15 @@ def community(
         )
     else:
         query = select(ForumPost).order_by(ForumPost.created_at.desc())
+    return db.scalars(query).all()
 
-    posts = db.scalars(query).all()
-    return templates.TemplateResponse(
-        request,
-        "community.html",
-        {"user": user, "active": "community", "posts": posts, "tab": tab},
-    )
+
+@router.get("/community")
+def community(tab: str = "popular"):
+    # The list now lives on /ummah (ชุมชน | ข่าวสาร); old links land on the ชุมชน view.
+    if tab not in ("popular", "latest"):
+        tab = "popular"
+    return RedirectResponse(f"/ummah?view=community&tab={tab}", status_code=303)
 
 
 @router.get("/community/new")

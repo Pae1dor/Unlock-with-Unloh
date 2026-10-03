@@ -3,6 +3,13 @@
 
 {% block header %}
 <header class="profile-head">
+  {% if admin_pending is not none %}
+  {# Only for users allowed into /admin (checked again on the server there). #}
+  <a class="profile-head__admin" href="/admin" aria-label="จัดการระบบ{% if admin_pending %} ({{ admin_pending }} เรื่องรอตรวจ){% endif %}">
+    <svg class="ico"><use href="#i-shield"></use></svg>
+    {% if admin_pending %}<span class="count-badge count-badge--corner">{{ admin_pending }}</span>{% endif %}
+  </a>
+  {% endif %}
   <div class="avatar avatar--lg">{{ user.initial }}</div>
   <div style="font-size:18px;font-weight:700">{{ user.full_name }}</div>
   <div style="font-size:13px;opacity:.85">{{ user.email }}</div>
@@ -16,6 +23,31 @@
   <div><strong>{{ post_count }}</strong><span>กระทู้</span></div>
   <div><strong>{{ donation_count }}</strong><span>การบริจาค</span></div>
 </div>
+
+{# Weekly prayer grid — view only, filled in by static/js/prayer-week.js. Private to this user. #}
+<div class="section">
+  <div class="pw-card" id="prayer-week">
+    <div class="pw-head">
+      <div>
+        <h2 class="card__title">ตารางละหมาด</h2>
+        <div class="pw-total"><span id="pw-total-label">สัปดาห์นี้</span> <strong id="pw-total"></strong></div>
+      </div>
+      <div class="pw-streak" id="pw-streak"></div>
+    </div>
+    <div class="pw-nav">
+      <button type="button" class="pw-nav__btn" id="pw-prev" aria-label="สัปดาห์ก่อน">
+        <svg class="ico"><use href="#i-back"></use></svg>
+      </button>
+      <span class="pw-nav__range" id="pw-range"></span>
+      <button type="button" class="pw-nav__btn pw-nav__btn--next" id="pw-next" aria-label="สัปดาห์ถัดไป">
+        <svg class="ico"><use href="#i-back"></use></svg>
+      </button>
+    </div>
+    <div class="pw-grid" id="pw-grid" role="grid" aria-label="ตารางละหมาดรายสัปดาห์"></div>
+    <p class="pw-detail" id="pw-detail" aria-live="polite">แตะจุดเพื่อดูรายละเอียด</p>
+  </div>
+</div>
+<script type="application/json" id="prayer-week-data">{{ prayer_week|tojson }}</script>
 
 {% if user.avatar_style != 'symbol' %}
 <div class="section">
@@ -45,6 +77,18 @@
   </a>
 </div>
 
+{# Send something to the admins (reviewed at /admin) #}
+<div class="section action-pair">
+  <a class="action-pair__btn" href="/mosque-requests/new">
+    <svg class="ico"><use href="#i-mosque"></use></svg>
+    <span>เพิ่มมัสยิด</span>
+  </a>
+  <a class="action-pair__btn" href="/reports/new">
+    <svg class="ico"><use href="#i-flag"></use></svg>
+    <span>แจ้งปัญหา</span>
+  </a>
+</div>
+
 <div class="section">
   <div class="card">
     <h2 class="card__title">แก้ไขข้อมูลส่วนตัว</h2>
@@ -61,25 +105,29 @@
         <label for="phone">เบอร์โทรศัพท์</label>
         <input type="tel" id="phone" name="phone" maxlength="40" value="{{ user.phone or '' }}">
       </div>
-      <div class="field">
-        <label>ตัวละครของคุณ</label>
-        <div class="avatar-picker">
-          {% for value, label in avatar_styles %}
-          <label class="avatar-picker__opt">
-            <input type="radio" name="avatar_style" value="{{ value }}"
-                   {% if user.avatar_style == value %}checked{% endif %}>
-            <span class="avatar-picker__card">
-              <img src="/static/img/mascot-{{ value }}.svg" alt="{{ label }}" width="300" height="340">
-              <span class="avatar-picker__label">{{ label }}</span>
-            </span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
+<!--      <div class="field">-->
+<!--&lt;!&ndash;        <label>ตัวละครของคุณ</label>&ndash;&gt;-->
+<!--&lt;!&ndash;        <div class="avatar-picker">&ndash;&gt;-->
+<!--&lt;!&ndash;          {% for value, label in avatar_styles %}&ndash;&gt;-->
+<!--&lt;!&ndash;          <label class="avatar-picker__opt">&ndash;&gt;-->
+<!--&lt;!&ndash;            <input type="radio" name="avatar_style" value="{{ value }}"&ndash;&gt;-->
+<!--&lt;!&ndash;                   {% if user.avatar_style == value %}checked{% endif %}>&ndash;&gt;-->
+<!--&lt;!&ndash;            <span class="avatar-picker__card">&ndash;&gt;-->
+<!--&lt;!&ndash;              <img src="/static/img/mascot-{{ value }}.svg" alt="{{ label }}" width="300" height="340">&ndash;&gt;-->
+<!--&lt;!&ndash;              <span class="avatar-picker__label">{{ label }}</span>&ndash;&gt;-->
+<!--&lt;!&ndash;            </span>&ndash;&gt;-->
+<!--&lt;!&ndash;          </label>&ndash;&gt;-->
+<!--          {% endfor %}-->
+<!--        </div>-->
+<!--      </div>-->
       <button class="btn" type="submit">บันทึกข้อมูล</button>
     </form>
   </div>
 
   <a class="btn btn--danger" href="/logout">ออกจากระบบ</a>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_url('js/prayer-week.js') }}"></script>
 {% endblock %}

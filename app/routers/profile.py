@@ -8,9 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.config import CITY_COOKIE
 from app.database import get_db
-from app.deps import require_user
-from app.models import Donation, ForumPost, User, UserOutfit
-from app.outfits import OUTFITS, RARITY_LABELS, outfits_for
+from app.deps import get_current_user, require_user
+from app.models import Donation, ForumPost, User, UserBackground, UserOutfit
+from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, DEFAULT_CHARACTER, OUTFITS, RARITY_LABELS, background_available, backgrounds_list, is_wearable, outfits_for
+from app.permissions import can
+from app.routers.prayer_log import week_for
+from app.services import admin_queue, prayer_log, rewards
 from app.templating import AVATAR_STYLE_KEYS, templates
 
 router = APIRouter(tags=["profile"])
@@ -24,6 +27,7 @@ def profile(
 ):
     post_count = db.scalar(select(func.count(ForumPost.id)).where(ForumPost.user_id == user.id)) or 0
     donation_count = db.scalar(select(func.count(Donation.id)).where(Donation.user_id == user.id)) or 0
+    today = prayer_log.now_local().date()
     return templates.TemplateResponse(
         request,
         "profile.html",
@@ -33,6 +37,10 @@ def profile(
             "post_count": post_count,
             "donation_count": donation_count,
             "saved": request.query_params.get("saved") == "1",
+            # weekly prayer grid (read-only); the arrows fetch other weeks from /api/prayer-log/week
+            "prayer_week": week_for(db, user, today, prayer_log.now_local()),
+            # None hides the admin icon; a number is the badge (things waiting for review)
+            "admin_pending": admin_queue.pending_counts(db)["total"] if can(user, "admin.panel") else None,
         },
     )
 
@@ -61,16 +69,26 @@ def update_profile(
 
 
 @router.get("/profile/outfits")
-def wardrobe(request: Request, user: User = Depends(require_user)):
+def wardrobe(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    avatar_style = user.avatar_style if user else "male"
+    if user:
+        rewards.grant_earned(db, user)
     return templates.TemplateResponse(
         request,
         "wardrobe.html",
         {
             "user": user,
             "active": "profile",
-            "back_url": "/profile",
-            "outfits": outfits_for(user.avatar_style),
+            "back_url": "/profile" if user else "/",
+            "outfits": outfits_for(avatar_style, user.unlocked_outfits if user else set()),
             "rarity_labels": RARITY_LABELS,
+            "default_image": DEFAULT_CHARACTER.get(avatar_style, DEFAULT_CHARACTER["male"]),
+            "backgrounds": backgrounds_list(user.owned_backgrounds if user else set()),
+            "background": user.background if user else {"key": DEFAULT_BACKGROUND, **BACKGROUNDS[DEFAULT_BACKGROUND]},
             "saved": request.query_params.get("saved") == "1",
         },
     )
@@ -79,11 +97,19 @@ def wardrobe(request: Request, user: User = Depends(require_user)):
 @router.post("/profile/outfit")
 def equip_outfit(
     outfit_key: str = Form(""),
+    background_key: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
+    if background_available(background_key, user.owned_backgrounds):
+        if user.background_choice is None:
+            user.background_choice = UserBackground(background_key=background_key)
+        else:
+            user.background_choice.background_key = background_key
+
     outfit = OUTFITS.get(outfit_key)
-    if outfit is None or outfit["gender"] != user.avatar_style:
+    if (outfit is None or outfit["gender"] != user.avatar_style
+            or not is_wearable(outfit_key, outfit, user.unlocked_outfits)):
         # "" (or anything unknown) = back to the plain 2D mascot
         user.outfit_choice = None
     elif user.outfit_choice is None:

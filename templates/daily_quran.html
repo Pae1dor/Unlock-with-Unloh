@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}อัลกุรอานประจำวัน — {{ app_name }}{% endblock %}
+{% block page_title %}อัลกุรอานประจำวัน{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+{% endblock %}
+
+{% block content %}
+<div class="daily" id="daily-quran"
+     data-api="{{ api_base }}" data-editions="{{ editions }}"
+     data-names="{{ surah_names_th|tojson|forceescape }}">
+  <p class="daily__date" id="daily-date"></p>
+
+  <p class="empty is-loading" id="daily-loading">กำลังโหลดอายะฮ์ประจำวัน...</p>
+
+  <div class="notice notice--error" id="daily-error" hidden>
+    ไม่สามารถโหลดอายะฮ์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่
+    <button class="btn daily__retry" type="button" id="daily-retry">ลองใหม่</button>
+  </div>
+
+  <article class="daily__card" id="daily-card" hidden>
+    <div class="daily__head">
+      <div class="daily__surah-ar" id="daily-surah-ar"></div>
+      <div class="daily__surah-th" id="daily-surah-th"></div>
+      <div class="daily__ref" id="daily-ref"></div>
+    </div>
+    <p class="daily__ar" id="daily-ar" lang="ar" dir="rtl"></p>
+    <p class="daily__th" id="daily-th"></p>
+    <a class="daily__link" id="daily-link" href="/quran">อ่านทั้งซูเราะฮ์</a>
+  </article>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_url('js/daily-quran.js') }}"></script>
+{% endblock %}

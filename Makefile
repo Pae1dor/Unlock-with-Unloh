@@ -1,4 +1,4 @@
-.PHONY: help build up stop down restart logs seed admin
+.PHONY: help build up stop down restart logs seed admin unadmin
 
 help:
 	@echo make build   - build + run
@@ -9,6 +9,7 @@ help:
 	@echo make logs    - show app logs
 	@echo make seed    - insert sample data
 	@echo make admin EMAIL=you@example.com - make that user an admin
+	@echo make unadmin EMAIL=you@example.com - remove admin (never the last one)
 
 build:
 	docker compose up --build -d
@@ -37,3 +38,9 @@ ifndef EMAIL
 	$(error usage: make admin EMAIL=you@example.com)
 endif
 	docker compose exec app python -m app.make_admin $(EMAIL)
+
+unadmin:
+ifndef EMAIL
+	$(error usage: make unadmin EMAIL=you@example.com)
+endif
+	docker compose exec app python -m app.make_admin --revoke $(EMAIL)

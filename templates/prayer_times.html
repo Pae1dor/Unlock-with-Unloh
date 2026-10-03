@@ -21,11 +21,27 @@
     <div class="prayer-card__date">
       <div>{{ prayer.gregorian }}</div>
       {% if prayer.hijri %}<div class="prayer-card__hijri">{{ prayer.hijri }}</div>{% endif %}
+      {% if log %}<div class="pl-count">วันนี้ <span id="pl-count">{{ log.count }}</span>/5</div>{% endif %}
     </div>
     <div class="prayer-list">
       {% for item in prayer.timings %}
-      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %}" data-prayer-key="{{ item.key }}">
-        <span class="prayer-list__name">{{ item.name_th }}</span>
+      {% set row = log.rows[item.key|lower] if log else none %}
+      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %} {% if row and row.state %}is-{{ row.state|replace('_', '-') }}{% endif %}" data-prayer-key="{{ item.key }}">
+        <span class="prayer-list__name">
+          {% if row %}
+          {# Prayer log circle — status only: ticked by listening to the Quran in that prayer's
+             time (static/js/quran-player.js) or by a mosque check-in. #}
+          {% set entry = row.log %}
+          <span class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source in ('checkin', 'quran') %} is-{{ entry.source }}{% endif %}{% endif %}"
+                data-prayer="{{ item.key|lower }}" data-starts="{{ row.starts_ms }}" role="img"
+                aria-label="{% if entry %}บันทึก{{ item.name_th }}แล้ว{% elif row.started %}ยังไม่ได้บันทึก{{ item.name_th }}{% else %}ยังไม่เข้าเวลา{{ item.name_th }}{% endif %}">
+            <svg class="ico"><use href="#i-{{ 'book' if entry and entry.source == 'quran' else 'mosque' }}"></use></svg>
+          </span>
+          {% endif %}
+          {{ item.name_th }}
+          {% if row and row.state == 'missed' %}<span class="pl-state">ขาด</span>
+          {% elif row and row.state == 'due_soon' %}<span class="pl-state">อีก {{ row.minutes_left }} นาที</span>{% endif %}
+        </span>
         <span class="prayer-list__time">{{ item.time }}</span>
       </div>
       {% endfor %}
@@ -35,6 +51,12 @@
   <p class="map-note" style="padding-left:0">ระบบเวลาละหมาดหลักขัดข้องชั่วคราว เวลานี้คำนวณจากพิกัดจังหวัด อาจต่างจากประกาศของมัสยิดเล็กน้อย</p>
   {% endif %}
 </div>
+{% if log %}
+<a class="pl-hint" href="/quran">
+  <svg class="ico"><use href="#i-book"></use></svg>
+  <span>ฟังอัลกุรอานในช่วงเวลาละหมาด ระบบจะติ๊กเวลานั้นให้อัตโนมัติ</span>
+</a>
+{% endif %}
 {% else %}
 <div class="notice notice--error">{{ prayer.error }}</div>
 {% endif %}
@@ -49,4 +71,5 @@
 
 {% block scripts %}
 <script src="{{ static_url('js/prayer.js') }}"></script>
+<script src="{{ static_url('js/prayer-log.js') }}"></script>
 {% endblock %}

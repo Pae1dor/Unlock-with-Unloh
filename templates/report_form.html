@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}แจ้งปัญหา — {{ app_name }}{% endblock %}
+{% block page_title %}แจ้งปัญหา{% endblock %}
+
+{% block content %}
+  <p class="form-intro">แจ้งบั๊ก ข้อมูลมัสยิดที่ไม่ถูกต้อง เนื้อหาที่ไม่เหมาะสม หรือเสนอไอเดีย
+    · <a href="/reports/mine">ดูที่ฉันส่ง</a></p>
+
+  {% if error %}<div class="notice notice--error">{{ error }}</div>{% endif %}
+  {% if remaining == 0 and not error %}<div class="notice notice--error">วันนี้ส่งครบแล้ว ส่งเพิ่มได้อีกครั้งพรุ่งนี้</div>{% endif %}
+
+  <form class="form" method="post" action="/reports/new" enctype="multipart/form-data">
+    <div class="field">
+      <label>หมวด *</label>
+      <div class="chip-picker chip-picker--wrap">
+        {% for key, label in categories %}
+        <label class="chip-picker__opt">
+          <input type="radio" name="category" value="{{ key }}" required {% if form.category == key %}checked{% endif %}>
+          <span class="chip">{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="field">
+      <label for="detail">รายละเอียด *</label>
+      <textarea id="detail" name="detail" required maxlength="2000"
+                placeholder="เกิดอะไรขึ้น ที่หน้าไหน หรืออยากให้มีอะไรเพิ่ม">{{ form.detail }}</textarea>
+    </div>
+    <div class="field">
+      <label for="image">แนบรูป (ไม่บังคับ, 1 รูป, ไม่เกิน 5 MB)</label>
+      <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp">
+      <span class="field__hint">ข้อมูลตำแหน่งในรูปจะถูกลบออกก่อนบันทึก</span>
+    </div>
+    <input type="hidden" name="page" value="{{ form.page }}">
+    <p class="field__hint" style="margin:-4px 0 14px">ระบบแนบเวอร์ชันแอป ({{ app_version }}){% if form.page %} และหน้าที่คุณมา ({{ form.page }}){% endif %} ให้อัตโนมัติ</p>
+
+    <button class="btn" type="submit" {% if remaining == 0 %}disabled{% endif %}>ส่งเรื่อง</button>
+    <p class="form-foot">ส่งได้อีก {{ remaining }} เรื่องวันนี้ (รวมคำขอเพิ่มมัสยิด)</p>
+  </form>
+{% endblock %}

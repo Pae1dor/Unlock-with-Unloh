@@ -92,6 +92,48 @@
     loadAndPlay(current + 1);
   });
 
+  // Listening during a prayer's time ticks that prayer in the prayer log (server decides
+  // which one, and ignores it outside prayer times or when logged out). Needs a short
+  // real listen so an accidental tap doesn't count; reported once per page.
+  var LISTEN_SECONDS = 10;
+  var listened = 0;
+  var lastTick = null;
+  var reported = false;
+
+  audio.addEventListener('timeupdate', function () {
+    if (reported) return;
+    var t = audio.currentTime;
+    if (lastTick !== null && t > lastTick && t - lastTick < 2) listened += t - lastTick;
+    lastTick = t;
+    if (listened >= LISTEN_SECONDS) {
+      reported = true;
+      reportListen();
+    }
+  });
+  audio.addEventListener('emptied', function () { lastTick = null; }); // next ayah starts at 0
+
+  function reportListen() {
+    fetch('/api/prayer-log/listen', { method: 'POST' })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (data && data.logged && data.created) {
+          listenToast('บันทึกละหมาด' + data.label + 'แล้ว จากการฟังอัลกุรอาน');
+          // a fifth prayer may have earned an outfit: let ui.js announce it now
+          if (window.uiCheckPrayerAlerts) setTimeout(window.uiCheckPrayerAlerts, 4500);
+        }
+      })
+      .catch(function () { /* offline etc.: nothing to tell */ });
+  }
+
+  function listenToast(text) {
+    var toast = document.createElement('div');
+    toast.className = 'pl-toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = '\u2713 ' + text;
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 4000);
+  }
+
   if (fabBtn) fabBtn.addEventListener('click', togglePlay);
   if (barBtn) barBtn.addEventListener('click', togglePlay);
 

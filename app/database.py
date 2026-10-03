@@ -34,3 +34,9 @@ def init_db() -> None:
     from app import models  # noqa: F401  (register mappers before create_all)
 
     Base.metadata.create_all(engine)
+
+    # Added columns and data fixes for databases created by older versions.
+    from app import migrations
+
+    with SessionLocal() as db:
+        migrations.run(db)

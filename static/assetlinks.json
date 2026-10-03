@@ -1,8 +1,22 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.unloh.app",
-        "sha256_cert_fingerprints": ["CD:14:B9:F8:49:7A:C3:02:AA:F7:34:13:BA:58:1F:9E:20:DD:1B:24:2D:C0:C1:E0:52:D5:69:B7:0F:3A:F3:D3"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.unlock.unloh",
+      "sha256_cert_fingerprints": [
+        "96:D7:CF:C9:C8:C4:B6:A8:97:55:54:97:00:23:50:6A:E5:F7:37:D0:0C:B4:78:2F:01:82:FE:FA:16:58:B1:E4"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.unloh.app",
+      "sha256_cert_fingerprints": [
+        "CD:14:B9:F8:49:7A:C3:02:AA:F7:34:13:BA:58:1F:9E:20:DD:1B:24:2D:C0:C1:E0:52:D5:69:B7:0F:3A:F3:D3"
+      ]
+    }
+  }
+]

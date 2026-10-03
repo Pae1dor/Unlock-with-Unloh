@@ -10,11 +10,13 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -43,6 +45,8 @@ class User(Base):
     notify_asr: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notify_maghrib: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notify_isha: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Legacy flag, kept in sync with a system-wide "admin" row in user_roles. Never check it
+    # directly: permissions go through app/permissions.py (can / require).
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -51,6 +55,12 @@ class User(Base):
     likes: Mapped[list["ForumLike"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     donations: Mapped[list["Donation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     outfit_choice: Mapped["UserOutfit | None"] = relationship(cascade="all, delete-orphan")
+    background_choice: Mapped["UserBackground | None"] = relationship(cascade="all, delete-orphan")
+    roles: Mapped[list["UserRole"]] = relationship(
+        foreign_keys="UserRole.user_id", back_populates="user", cascade="all, delete-orphan"
+    )
+    outfit_unlocks: Mapped[list["UserOutfitUnlock"]] = relationship(cascade="all, delete-orphan")
+    background_unlocks: Mapped[list["UserBackgroundUnlock"]] = relationship(cascade="all, delete-orphan")
 
     @property
     def initial(self) -> str:
@@ -59,20 +69,64 @@ class User(Base):
     @property
     def outfit(self) -> dict | None:
         """The outfit the character wears, or None for the plain 2D mascot."""
-        from app.outfits import OUTFITS
+        from app.outfits import OUTFITS, is_wearable
 
         if self.outfit_choice is None:
             return None
-        outfit = OUTFITS.get(self.outfit_choice.outfit_key)
-        # An outfit only fits the character it was drawn for.
+        key = self.outfit_choice.outfit_key
+        outfit = OUTFITS.get(key)
+        # An outfit only fits the character it was drawn for, and must be available to them.
         if outfit is None or outfit["gender"] != self.avatar_style:
+            return None
+        if not is_wearable(key, outfit, self.unlocked_outfits):
             return None
         return {"key": self.outfit_choice.outfit_key, **outfit}
 
     @property
+    def unread_mail_count(self) -> int:
+        """Badge on the mailbox icon (every page header)."""
+        from sqlalchemy import func, select
+        from sqlalchemy.orm import object_session
+
+        db = object_session(self)
+        if db is None:
+            return 0
+        return db.scalar(select(func.count(Mail.id)).where(Mail.user_id == self.id, Mail.read_at.is_(None))) or 0
+
+    @property
+    def owned_backgrounds(self) -> set[str]:
+        return {u.background_key for u in self.background_unlocks}
+
+    @property
+    def unlocked_outfits(self) -> set[str]:
+        return {u.outfit_key for u in self.outfit_unlocks}
+
+    @property
+    def background(self) -> dict:
+        """Background behind the character; falls back to the default CSS scene."""
+        from app.outfits import BACKGROUNDS, DEFAULT_BACKGROUND, background_available
+
+        key = self.background_choice.background_key if self.background_choice else DEFAULT_BACKGROUND
+        if not background_available(key, self.owned_backgrounds):  # removed, or hidden and not owned
+            key = DEFAULT_BACKGROUND
+        return {"key": key, **BACKGROUNDS[key]}
+
+    @property
+    def has_character(self) -> bool:
+        """male / female draw a character that stands on a background; "symbol" doesn't."""
+        return self.avatar_style in ("male", "female")
+
+    @property
     def character_image(self) -> str:
         outfit = self.outfit
-        return outfit["image"] if outfit else f"/static/img/mascot-{self.avatar_style}.svg"
+        if outfit:
+            return outfit["image"]
+        if self.has_character:
+            from app.outfits import DEFAULT_CHARACTER
+
+            # character only, transparent — the background comes from the chosen scene
+            return DEFAULT_CHARACTER[self.avatar_style]
+        return f"/static/img/mascot-{self.avatar_style}.svg"
 
 
 class UserOutfit(Base):
@@ -86,6 +140,92 @@ class UserOutfit(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     outfit_key: Mapped[str] = mapped_column(String(40), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class Mail(Base):
+    """A message in a user's mailbox (กล่องจดหมาย), optionally carrying an outfit gift.
+
+    Sent by the team (python -m app.send_gift); the gift is unlocked when the user claims it.
+    New table, created on startup by create_all.
+    """
+
+    __tablename__ = "mail"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    gift_outfit_key: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    gift_background_key: Mapped[str | None] = mapped_column(String(40), nullable=True)  # added later, see database.py
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class UserOutfitUnlock(Base):
+    """An outfit a user has earned (app/services/rewards.py); kept for good once earned.
+
+    `notified` flips once the "you got a new outfit" banner has been shown. New table.
+    """
+
+    __tablename__ = "user_outfit_unlocks"
+    __table_args__ = (UniqueConstraint("user_id", "outfit_key", name="uq_outfit_unlock_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    outfit_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    unlocked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    notified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class UserBackgroundUnlock(Base):
+    """A background a user owns (e.g. a limited one received as a mailbox gift). New table."""
+
+    __tablename__ = "user_background_unlocks"
+    __table_args__ = (UniqueConstraint("user_id", "background_key", name="uq_background_unlock_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    background_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    unlocked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class UserBackground(Base):
+    """Background chosen behind a user's character (one row per user; key from app/outfits.py)."""
+
+    __tablename__ = "user_backgrounds"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    background_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class UserRole(Base):
+    """A role granted to a user (app/permissions.py maps roles to what they may do).
+
+    mosque_id None = system-wide; otherwise scoped to one mosque ("osm:node/1", "app:3"; see
+    app/mosque_ids.py) for a future mosque_admin. Created on startup by create_all.
+    """
+
+    __tablename__ = "user_roles"
+    __table_args__ = (
+        UniqueConstraint("user_id", "role", "mosque_id", name="uq_user_roles_scoped"),
+        # NULLs never collide in a unique constraint, so the system-wide grant needs its own index.
+        Index(
+            "uq_user_roles_global", "user_id", "role", unique=True,
+            postgresql_where=text("mosque_id IS NULL"), sqlite_where=text("mosque_id IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)  # admin (future: mosque_admin)
+    mosque_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    granted_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id], back_populates="roles")
+    granter: Mapped["User | None"] = relationship(foreign_keys=[granted_by])
 
 
 class News(Base):
@@ -223,7 +363,8 @@ class MosqueCheckin(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    osm_id: Mapped[str] = mapped_column(String(32), index=True, nullable=False)  # "node/123", "way/456"
+    # despite the name, a prefixed mosque id: "osm:node/123" (app/mosque_ids.py)
+    osm_id: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
     # name at check-in time, so history still reads right if the OSM name changes later
     mosque_name: Mapped[str] = mapped_column(String(200), nullable=False)
     prayer_key: Mapped[str] = mapped_column(String(20), nullable=False)  # Fajr | Dhuhr | Asr | Maghrib | Isha
@@ -232,6 +373,128 @@ class MosqueCheckin(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     user: Mapped["User"] = relationship()
+
+
+class PrayerNotice(Base):
+    """A "you missed <prayer>" notice already raised for a user, so it is shown only once.
+
+    New table, created on startup by create_all.
+    """
+
+    __tablename__ = "prayer_notices"
+    __table_args__ = (UniqueConstraint("user_id", "date", "prayer", name="uq_prayer_notice_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    prayer: Mapped[str] = mapped_column(String(10), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class PrayerLog(Base):
+    """One of the five obligatory prayers marked as prayed (app/services/prayer_log.py).
+
+    Private to its user: only ever read back for the logged-in owner. New table, so it is
+    created on startup by create_all — existing tables and rows are untouched.
+    """
+
+    __tablename__ = "prayer_log"
+    __table_args__ = (UniqueConstraint("user_id", "date", "prayer", name="uq_prayer_log_once"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    # the day the prayer belongs to (an Isha check-in after midnight counts for the previous day)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    prayer: Mapped[str] = mapped_column(String(10), nullable=False)  # fajr | dhuhr | asr | maghrib | isha
+    logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    status: Mapped[str] = mapped_column(String(10), nullable=False)  # on_time | qada (set by the server)
+    source: Mapped[str] = mapped_column(String(10), default="manual", nullable=False)  # manual | checkin
+    in_congregation: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # prefixed mosque id ("osm:node/123", app/mosque_ids.py) when source == checkin; the
+    # finder's mosques are OpenStreetMap places, not rows of the old `mosques` table.
+    mosque_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+
+class AppMosque(Base):
+    """A mosque added through the app (an approved MosqueRequest). Its id is "app:<id>".
+
+    Shown on the finder together with the OSM file (services/app_mosques.py): within ~50 m of
+    an OSM mosque they count as the same place and the app's data wins. Never deleted, because
+    check-ins and prayer logs point at "app:<id>"; an admin hides one with is_active=False.
+    """
+
+    __tablename__ = "app_mosques"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lng: Mapped[float] = mapped_column(Float, nullable=False)
+    address: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    opening_hours: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    has_women_area: Mapped[bool | None] = mapped_column(Boolean, nullable=True)   # None = not known
+    has_jumuah: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    # False = hidden from the map and search (and no new check-ins); history keeps its name.
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # The OSM mosque this one stands in for, cached so the 50 m match isn't redone per request:
+    #   None = not checked yet, "" = checked and none nearby, "osm:node/123" = that one.
+    osm_ref: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+    @property
+    def mosque_id(self) -> str:
+        from app.mosque_ids import from_app
+
+        return from_app(self.id)
+
+
+class MosqueRequest(Base):
+    """'เพิ่มมัสยิด' from a user; an admin approves it into app_mosques or rejects it."""
+
+    __tablename__ = "mosque_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # from the pin on the map (never typed in)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lng: Mapped[float] = mapped_column(Float, nullable=False)
+    address: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    opening_hours: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    has_women_area: Mapped[bool | None] = mapped_column(Boolean, nullable=True)   # None = not sure
+    has_jumuah: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    status: Mapped[str] = mapped_column(String(12), default="pending", index=True, nullable=False)  # pending | approved | rejected
+    review_note: Mapped[str] = mapped_column(String(400), default="", nullable=False)  # shown to the sender
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    app_mosque_id: Mapped[int | None] = mapped_column(ForeignKey("app_mosques.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True, nullable=False)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+
+
+class Report(Base):
+    """'แจ้งปัญหา' from a user. target_type/target_id are for reports filed from a specific
+    post, comment or mosque later on; the round-3 form (profile page) leaves them empty."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    category: Mapped[str] = mapped_column(String(20), nullable=False)  # bug | mosque_info | content | idea
+    target_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # post | comment | mosque
+    target_id: Mapped[str | None] = mapped_column(String(40), nullable=True)     # e.g. "12", "osm:node/1"
+    detail: Mapped[str] = mapped_column(Text, nullable=False)
+    # file name under UPLOAD_DIR/reports (re-encoded, metadata stripped); private
+    image_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    app_version: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    page: Mapped[str] = mapped_column(String(300), default="", nullable=False)  # page the user came from
+    status: Mapped[str] = mapped_column(String(12), default="open", index=True, nullable=False)  # open | resolved | dismissed
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True, nullable=False)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
 
 
 class DonationCampaign(Base):

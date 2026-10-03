@@ -31,6 +31,8 @@ services:
     volumes:
       # QR images made by `make seed` survive rebuilding the container
       - ./static/qr:/code/static/qr
+      # report screenshots users attach (private; served by the app, not /static)
+      - ./uploads:/code/uploads
     depends_on:
       db:
         condition: service_healthy

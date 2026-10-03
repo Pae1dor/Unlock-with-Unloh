@@ -9,7 +9,7 @@
   {% endfor %}
 </div>
 
-{% if user and user.is_admin %}
+{% if can(user, "news.manage") %}
 <a class="fab-link" href="/news/new" style="margin-top:14px">
   <svg class="ico"><use href="#i-plus"></use></svg> สร้างข่าว
 </a>
