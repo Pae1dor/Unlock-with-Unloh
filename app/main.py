@@ -58,6 +58,20 @@ async def service_worker():
     )
 
 
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+async def asset_links():
+    assetlinks_file = STATIC_DIR / "assetlinks.json"
+    if assetlinks_file.exists():
+        return FileResponse(
+            assetlinks_file,
+            media_type="application/json",
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
+    return JSONResponse(content=[], status_code=404)
+
+
+
+
 @app.exception_handler(LoginRequired)
 async def login_required_handler(request: Request, exc: LoginRequired):
     return RedirectResponse(url=f"/login?next={exc.next_url}", status_code=303)

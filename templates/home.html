@@ -39,7 +39,7 @@
 
 
 <section class="section">
-  <div class="mascot-card {% if user and user.outfit %}mascot-card--outfit{% endif %}">
+  <div class="mascot-card {% if user and user.outfit %}mascot-card--outfit{% endif %} {% if not user %}mascot-card--locked{% endif %}">
     <img class="mascot-card__img" src="{{ user.character_image if user else '/static/img/mascot-symbol.svg' }}"
          alt="ยินดีต้อนรับสู่ประชาชนเพื่อพี่น้องอิสลาม" width="300" height="340">
     <a class="mascot-card__shortcut mascot-card__shortcut--left" href="/mosques">
@@ -50,6 +50,16 @@
       <svg class="ico"><use href="#i-book"></use></svg>
       <span>อัลกุรอาน</span>
     </a>
+
+    {% if not user %}
+    <div class="mascot-card__overlay">
+      <div class="stage__overlay-card">
+        <svg class="ico" style="width:32px;height:32px;color:var(--green);"><use href="#i-user"></use></svg>
+        <p style="margin:8px 0 12px;font-weight:700;font-size:14px;color:var(--ink);line-height:1.4;">โปรดเข้าสู่ระบบ<br>เพื่อแสดงตัวละครของคุณ</p>
+        <a class="btn btn--sm" href="/login?next=/">เข้าสู่ระบบ</a>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </section>
 

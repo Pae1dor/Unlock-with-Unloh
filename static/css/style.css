@@ -304,6 +304,60 @@ button { font: inherit; }
 .mascot-card__shortcut--left { left: 14px; }
 .mascot-card__shortcut--right { right: 14px; }
 
+/* ---------- locked / disabled character state ---------- */
+.mascot-card--locked,
+.stage-container--locked {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.mascot-card--locked .mascot-card__img,
+.stage-container--locked .stage__img {
+  filter: grayscale(100%) opacity(0.35);
+  pointer-events: none;
+}
+
+.mascot-card__overlay,
+.stage__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(247, 245, 240, 0.72);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  text-align: center;
+  z-index: 10;
+}
+
+.stage__overlay-card {
+  background: #ffffff;
+  padding: 18px 22px;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 260px;
+}
+
+.is-disabled-section {
+  filter: grayscale(80%) opacity(0.5);
+  pointer-events: none;
+  user-select: none;
+}
+
+.stage-container {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+
 /* ---------- generic cards ---------- */
 .card {
   background: var(--card);

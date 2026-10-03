@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import CITY_COOKIE
 from app.database import get_db
-from app.deps import require_user
+from app.deps import get_current_user, require_user
 from app.models import Donation, ForumPost, User, UserOutfit
 from app.outfits import OUTFITS, RARITY_LABELS, outfits_for
 from app.templating import AVATAR_STYLE_KEYS, templates
@@ -61,15 +61,16 @@ def update_profile(
 
 
 @router.get("/profile/outfits")
-def wardrobe(request: Request, user: User = Depends(require_user)):
+def wardrobe(request: Request, user: User | None = Depends(get_current_user)):
+    avatar_style = user.avatar_style if user else "boy"
     return templates.TemplateResponse(
         request,
         "wardrobe.html",
         {
             "user": user,
             "active": "profile",
-            "back_url": "/profile",
-            "outfits": outfits_for(user.avatar_style),
+            "back_url": "/profile" if user else "/",
+            "outfits": outfits_for(avatar_style),
             "rarity_labels": RARITY_LABELS,
             "saved": request.query_params.get("saved") == "1",
         },

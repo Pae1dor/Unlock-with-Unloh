@@ -5,41 +5,57 @@
 {% block content %}
 {% if saved %}<div class="notice notice--ok">เปลี่ยนชุดเรียบร้อยแล้ว</div>{% endif %}
 
-{% set current = user.outfit %}
-<div class="stage">
-  <img class="stage__img" id="outfit-preview" src="{{ user.character_image }}" alt="ตัวละครของคุณ">
+{% set current = user.outfit if user else None %}
+{% set avatar_style = user.avatar_style if user else 'boy' %}
+
+<div class="stage-container {% if not user %}stage-container--locked{% endif %}">
+  <div class="stage">
+    <img class="stage__img" id="outfit-preview" src="{{ user.character_image if user else '/static/img/mascot-boy.svg' }}" alt="ตัวละครของคุณ">
+  </div>
+  {% if not user %}
+  <div class="stage__overlay">
+    <div class="stage__overlay-card">
+      <svg class="ico" style="width:36px;height:36px;color:var(--green);"><use href="#i-user"></use></svg>
+      <p style="margin:10px 0 14px;font-weight:700;font-size:15px;color:var(--ink);line-height:1.4;">โปรดเข้าสู่ระบบ<br>เพื่อแสดงและเปลี่ยนชุดตัวละคร</p>
+      <a class="btn" href="/login?next=/profile/outfits">เข้าสู่ระบบ</a>
+    </div>
+  </div>
+  {% endif %}
 </div>
+
 <div class="stage__caption">
   <span id="outfit-name">{{ current.name if current else 'ตัวการ์ตูนเริ่มต้น' }}</span>
   <span class="badge badge--limited" id="outfit-badge" {% if not current or current.rarity != 'limited' %}hidden{% endif %}>ลิมิเต็ด</span>
 </div>
 
 {% if outfits %}
-<form class="section" method="post" action="/profile/outfit">
-  <div class="outfit-grid">
-    <label class="outfit-opt">
-      <input type="radio" name="outfit_key" value="" data-image="/static/img/mascot-{{ user.avatar_style }}.svg"
-             data-name="ตัวการ์ตูนเริ่มต้น" data-rarity="common" {% if not current %}checked{% endif %}>
-      <span class="outfit-card">
-        <span class="outfit-card__thumb"><img src="/static/img/mascot-{{ user.avatar_style }}.svg" alt="" loading="lazy"></span>
-        <span class="outfit-card__name">ตัวการ์ตูนเริ่มต้น</span>
-      </span>
-    </label>
-    {% for o in outfits %}
-    <label class="outfit-opt">
-      <input type="radio" name="outfit_key" value="{{ o.key }}" data-image="{{ o.image }}"
-             data-name="{{ o.name }}" data-rarity="{{ o.rarity }}" {% if current and current.key == o.key %}checked{% endif %}>
-      <span class="outfit-card outfit-card--{{ o.rarity }}">
-        <span class="outfit-card__thumb"><img src="{{ o.image }}" alt="" loading="lazy"></span>
-        <span class="outfit-card__name">{{ o.name }}</span>
-        <span class="outfit-card__rarity">{{ rarity_labels[o.rarity] }}</span>
-      </span>
-    </label>
-    {% endfor %}
-  </div>
-  <button class="btn" type="submit" style="margin-top:16px">
-    <svg class="ico"><use href="#i-user"></use></svg>ใส่ชุดนี้
-  </button>
+<form class="section {% if not user %}is-disabled-section{% endif %}" method="post" action="/profile/outfit">
+  <fieldset {% if not user %}disabled="disabled"{% endif %} style="border:none;padding:0;margin:0;">
+    <div class="outfit-grid">
+      <label class="outfit-opt">
+        <input type="radio" name="outfit_key" value="" data-image="/static/img/mascot-{{ avatar_style }}.svg"
+               data-name="ตัวการ์ตูนเริ่มต้น" data-rarity="common" {% if not current %}checked{% endif %}>
+        <span class="outfit-card">
+          <span class="outfit-card__thumb"><img src="/static/img/mascot-{{ avatar_style }}.svg" alt="" loading="lazy"></span>
+          <span class="outfit-card__name">ตัวการ์ตูนเริ่มต้น</span>
+        </span>
+      </label>
+      {% for o in outfits %}
+      <label class="outfit-opt">
+        <input type="radio" name="outfit_key" value="{{ o.key }}" data-image="{{ o.image }}"
+               data-name="{{ o.name }}" data-rarity="{{ o.rarity }}" {% if current and current.key == o.key %}checked{% endif %}>
+        <span class="outfit-card outfit-card--{{ o.rarity }}">
+          <span class="outfit-card__thumb"><img src="{{ o.image }}" alt="" loading="lazy"></span>
+          <span class="outfit-card__name">{{ o.name }}</span>
+          <span class="outfit-card__rarity">{{ rarity_labels[o.rarity] }}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px" {% if not user %}disabled{% endif %}>
+      <svg class="ico"><use href="#i-user"></use></svg>ใส่ชุดนี้
+    </button>
+  </fieldset>
 </form>
 {% else %}
 <div class="empty">ยังไม่มีชุดสำหรับตัวละครนี้ เร็วๆ นี้!</div>
