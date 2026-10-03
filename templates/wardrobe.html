@@ -11,7 +11,7 @@
 <div class="stage-container {% if not user %}stage-container--locked{% endif %}">
   <div class="stage {% if background.image %}scene-img{% endif %}" id="outfit-stage"
        {% if background.image %}style="--bg: url('{{ background.image }}')"{% endif %}>
-    <img class="stage__img" id="outfit-preview" src="{{ user.character_image if user else '/static/img/mascot-male-char.svg' }}" alt="ตัวละครของคุณ">
+    <img class="stage__img" id="outfit-preview" src="{{ user.character_image if user else default_image }}" alt="ตัวละครของคุณ">
   </div>
   {% if not user %}
   <div class="stage__overlay">
@@ -34,21 +34,28 @@
   <fieldset {% if not user %}disabled="disabled"{% endif %} style="border:none;padding:0;margin:0;">
     <div class="outfit-grid">
       <label class="outfit-opt">
-        <input type="radio" name="outfit_key" value="" data-image="/static/img/mascot-{{ avatar_style }}-char.svg"
+        <input type="radio" name="outfit_key" value="" data-image="{{ default_image }}"
                data-name="ตัวการ์ตูนเริ่มต้น" data-rarity="common" {% if not current %}checked{% endif %}>
         <span class="outfit-card">
-          <span class="outfit-card__thumb"><img src="/static/img/mascot-{{ avatar_style }}-char.svg" alt="" loading="lazy"></span>
+          <span class="outfit-card__thumb"><img src="{{ default_image }}" alt="" loading="lazy"></span>
           <span class="outfit-card__name">ตัวการ์ตูนเริ่มต้น</span>
         </span>
       </label>
       {% for o in outfits %}
-      <label class="outfit-opt">
+      <label class="outfit-opt {% if o.locked %}is-locked{% endif %}">
         <input type="radio" name="outfit_key" value="{{ o.key }}" data-image="{{ o.image }}"
-               data-name="{{ o.name }}" data-rarity="{{ o.rarity }}" {% if current and current.key == o.key %}checked{% endif %}>
+               data-name="{{ o.name }}" data-rarity="{{ o.rarity }}"
+               {% if o.locked %}disabled{% elif current and current.key == o.key %}checked{% endif %}>
         <span class="outfit-card outfit-card--{{ o.rarity }}">
           <span class="outfit-card__thumb"><img src="{{ o.image }}" alt="" loading="lazy"></span>
           <span class="outfit-card__name">{{ o.name }}</span>
           <span class="outfit-card__rarity">{{ rarity_labels[o.rarity] }}</span>
+          {% if o.locked %}
+          <span class="outfit-card__lock">
+            <svg class="ico"><use href="#i-lock"></use></svg>
+            <span>{{ o.hint }}</span>
+          </span>
+          {% endif %}
         </span>
       </label>
       {% endfor %}

@@ -20,7 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import TIMEZONE
-from app.models import MosqueCheckin, PrayerLog, User
+from app.models import MosqueCheckin, PrayerLog, PrayerNotice, User
 from app.services import praytime_calc
 from app.services.aladhan import PRAYERS, get_prayer_times
 
@@ -151,6 +151,140 @@ def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog
     return row
 
 
+def current_prayer(city: str, now: datetime) -> tuple[date, str] | None:
+    """(day, prayer) whose on-time window contains `now`, or None (e.g. sunrise -> Dhuhr).
+
+    Before today's Fajr it is still the previous day's Isha.
+    """
+    day = now.date()
+    starts = start_times(city, day)
+    if starts is None:
+        return None
+    if now < starts["fajr"]:
+        return day - timedelta(days=1), "isha"
+    for prayer in reversed(PRAYER_KEYS):
+        if now >= starts[prayer]:
+            end = end_time(city, day, prayer)
+            if end is not None and now >= end:
+                return None
+            return day, prayer
+    return None
+
+
+def log_listen(db: Session, user: User, now: datetime) -> tuple[PrayerLog, bool] | None:
+    """Listening to the Quran during a prayer's time ticks that prayer (source "quran").
+
+    Returns (row, created) or None when no prayer's time is running. Never touches a row
+    that already exists (manual, check-in or an earlier listen).
+    """
+    current = current_prayer(user.city, now)
+    if current is None:
+        return None
+    day, prayer = current
+    existing = logs_for_day(db, user.id, day).get(prayer)
+    if existing is not None:
+        return existing, False
+
+    row = PrayerLog(
+        user_id=user.id,
+        date=day,
+        prayer=prayer,
+        logged_at=_utc(now),
+        status="on_time",  # inside the window by definition
+        source="quran",
+        in_congregation=False,
+    )
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return logs_for_day(db, user.id, day)[prayer], False
+    db.refresh(row)
+    return row, True
+
+
+DUE_SOON_MINUTES = 30
+
+
+def _tracking_since(user: User) -> date:
+    """Days before the account existed are never "missed"."""
+    created = user.created_at
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    return created.astimezone(ZoneInfo(TIMEZONE)).date()
+
+
+def day_states(db: Session, user: User, now: datetime) -> dict[str, dict]:
+    """Today's unlogged prayers that are missed (time over) or due soon (< 30 min left).
+
+    {"asr": {"state": "missed"}, "maghrib": {"state": "due_soon", "minutes_left": 12}}
+    Prayers that are logged, not started yet, or comfortably open are left out.
+    """
+    day = now.date()
+    if day < _tracking_since(user):
+        return {}
+    starts = start_times(user.city, day)
+    if starts is None:
+        return {}
+    logs = logs_for_day(db, user.id, day)
+    joined = user.created_at if user.created_at.tzinfo else user.created_at.replace(tzinfo=timezone.utc)
+    out = {}
+    for prayer in PRAYER_KEYS:
+        if prayer in logs or now < starts[prayer]:
+            continue
+        end = end_time(user.city, day, prayer)
+        # no end time, or its time was already over before the account existed
+        if end is None or end <= joined:
+            continue
+        if now >= end:
+            out[prayer] = {"state": "missed"}
+        elif end - now <= timedelta(minutes=DUE_SOON_MINUTES):
+            out[prayer] = {"state": "due_soon", "minutes_left": max(1, int((end - now).total_seconds() // 60))}
+    return out
+
+
+def missed_since(db: Session, user: User, now: datetime) -> list[tuple[date, str]]:
+    """Missed prayers that may still need a notice: today's, plus yesterday's Isha
+    (its time runs until this morning's Fajr)."""
+    missed = [(now.date(), p) for p, s in day_states(db, user, now).items() if s["state"] == "missed"]
+    yesterday = now.date() - timedelta(days=1)
+    starts = start_times(user.city, now.date())
+    if (
+        yesterday >= _tracking_since(user)
+        and starts is not None
+        and now >= starts["fajr"]
+        and "isha" not in logs_for_day(db, user.id, yesterday)
+    ):
+        missed.append((yesterday, "isha"))
+    return missed
+
+
+def new_missed_notices(db: Session, user: User, now: datetime) -> list[dict]:
+    """Record a notice for every missed prayer not noticed before; return only the new ones.
+
+    Honours the per-prayer switches on /notifications. The unique constraint keeps it to
+    one notice per prayer even if two tabs ask at the same moment.
+    """
+    created = []
+    for day, prayer in missed_since(db, user, now):
+        if not getattr(user, f"notify_{prayer}", True):
+            continue
+        exists = db.scalar(select(PrayerNotice.id).where(
+            PrayerNotice.user_id == user.id, PrayerNotice.date == day, PrayerNotice.prayer == prayer))
+        if exists:
+            continue
+        db.add(PrayerNotice(user_id=user.id, date=day, prayer=prayer))
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            continue
+        created.append({"date": day.isoformat(), "prayer": prayer, "label": LABELS[prayer],
+                        "yesterday": day != now.date()})
+    return created
+
+
 def undo_manual(db: Session, user: User, prayer: str, day: date) -> bool:
     """Remove a manual log of today's `prayer` (the toast's ยกเลิก). Check-in logs stay."""
     row = logs_for_day(db, user.id, day).get(prayer)
@@ -226,7 +360,8 @@ def _short_date(d: date) -> str:
     return f"{d.day} {THAI_MONTHS_SHORT[d.month - 1]}"
 
 
-def week_summary(db: Session, user_id: int, start: date, today: date) -> dict:
+def week_summary(db: Session, user_id: int, start: date, today: date,
+                 missed_today: list[str] | None = None, since: date | None = None) -> dict:
     """Grid data for the profile card: 7 days (Mon-Sun) x 5 prayers, plus totals."""
     start = week_start(start)
     current = week_start(today)
@@ -266,7 +401,14 @@ def week_summary(db: Session, user_id: int, start: date, today: date) -> dict:
                 "time": local_time(r.logged_at),
                 "mosque_name": names.get((d, p)) if r.source == "checkin" else None,
             }
+        if d < today and (since is None or d >= since):
+            missed = [p for p in PRAYER_KEYS if cells[p] is None]
+        elif d == today:
+            missed = [p for p in (missed_today or []) if cells[p] is None]
+        else:
+            missed = []
         days.append({
+            "missed": missed,
             "date": d.isoformat(),
             "weekday": THAI_WEEKDAYS_SHORT[i],
             "day": d.day,

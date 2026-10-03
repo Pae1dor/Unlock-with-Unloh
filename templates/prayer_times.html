@@ -26,19 +26,21 @@
     <div class="prayer-list">
       {% for item in prayer.timings %}
       {% set row = log.rows[item.key|lower] if log else none %}
-      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %}" data-prayer-key="{{ item.key }}">
+      <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %} {% if row and row.state %}is-{{ row.state|replace('_', '-') }}{% endif %}" data-prayer-key="{{ item.key }}">
         <span class="prayer-list__name">
           {% if row %}
-          {# Prayer log circle (static/js/prayer-log.js): one tap marks the prayer, no popup. #}
+          {# Prayer log circle — status only: ticked by listening to the Quran in that prayer's
+             time (static/js/quran-player.js) or by a mosque check-in. #}
           {% set entry = row.log %}
-          <button type="button" class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source == 'checkin' %} is-checkin{% endif %}{% endif %}"
-                  data-prayer="{{ item.key|lower }}" data-name="{{ item.name_th }}" data-starts="{{ row.starts_ms }}"
-                  aria-label="{% if entry %}บันทึก{{ item.name_th }}แล้ว{% elif row.started %}บันทึกละหมาด{{ item.name_th }}{% else %}ยังไม่เข้าเวลา{{ item.name_th }}{% endif %}"
-                  {% if entry or not row.started %}disabled{% endif %}>
-            <svg class="ico"><use href="#i-mosque"></use></svg>
-          </button>
+          <span class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source in ('checkin', 'quran') %} is-{{ entry.source }}{% endif %}{% endif %}"
+                data-prayer="{{ item.key|lower }}" data-starts="{{ row.starts_ms }}" role="img"
+                aria-label="{% if entry %}บันทึก{{ item.name_th }}แล้ว{% elif row.started %}ยังไม่ได้บันทึก{{ item.name_th }}{% else %}ยังไม่เข้าเวลา{{ item.name_th }}{% endif %}">
+            <svg class="ico"><use href="#i-{{ 'book' if entry and entry.source == 'quran' else 'mosque' }}"></use></svg>
+          </span>
           {% endif %}
           {{ item.name_th }}
+          {% if row and row.state == 'missed' %}<span class="pl-state">ขาด</span>
+          {% elif row and row.state == 'due_soon' %}<span class="pl-state">อีก {{ row.minutes_left }} นาที</span>{% endif %}
         </span>
         <span class="prayer-list__time">{{ item.time }}</span>
       </div>
@@ -50,11 +52,10 @@
   {% endif %}
 </div>
 {% if log %}
-<div class="pl-toast" id="pl-toast" role="status" aria-live="polite" hidden>
-  <span id="pl-toast-text">บันทึกแล้ว</span>
-  <span class="pl-toast__sep" id="pl-toast-sep" aria-hidden="true">·</span>
-  <button type="button" class="pl-toast__undo" id="pl-toast-undo">ยกเลิก</button>
-</div>
+<a class="pl-hint" href="/quran">
+  <svg class="ico"><use href="#i-book"></use></svg>
+  <span>ฟังอัลกุรอานในช่วงเวลาละหมาด ระบบจะติ๊กเวลานั้นให้อัตโนมัติ</span>
+</a>
 {% endif %}
 {% else %}
 <div class="notice notice--error">{{ prayer.error }}</div>

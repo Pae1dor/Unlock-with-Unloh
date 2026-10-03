@@ -70,6 +70,76 @@
     });
   }
 
+  // ---- prayer alerts (logged-in only): a missed prayer is announced once (the server
+  // remembers), "time almost up" once per prayer per day (remembered on this device).
+  if (document.body.hasAttribute('data-logged-in')) {
+    var alertQueue = [];
+    var alertShowing = false;
+
+    var nextAlert = function () {
+      if (alertShowing || !alertQueue.length) return;
+      var a = alertQueue.shift();
+      alertShowing = true;
+      var el = document.createElement('a');
+      el.className = 'prayer-alert prayer-alert--' + a.kind;
+      el.href = a.href || '/prayer-times';
+      el.setAttribute('role', 'alert');
+      el.textContent = a.text;
+      document.body.appendChild(el);
+      setTimeout(function () {
+        el.classList.add('is-leaving');
+        setTimeout(function () { el.remove(); alertShowing = false; nextAlert(); }, 300);
+      }, 5000);
+    };
+
+    var systemNotify = function (title, body, tag) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      var opts = { body: body, tag: tag, icon: '/static/img/icon-192.png' };
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        navigator.serviceWorker.getRegistration().then(function (reg) {
+          if (reg) reg.showNotification(title, opts); else new Notification(title, opts);
+        }).catch(function () {});
+      } else {
+        try { new Notification(title, opts); } catch (e) { /* not allowed here */ }
+      }
+    };
+
+    var checkPrayerAlerts = function () {
+      fetch('/api/prayer-log/alerts', { headers: { Accept: 'application/json' } })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (!data) return;
+          (data.rewards || []).forEach(function (r) {
+            alertQueue.push({ kind: 'reward', text: '\ud83c\udf89 ละหมาดครบ 5 เวลา! ได้รับชุดใหม่ "' + r.name + '" แตะเพื่อใส่ชุด', href: '/profile/outfits' });
+            systemNotify('ได้รับชุดใหม่!', 'ละหมาดครบ 5 เวลา ได้รับ "' + r.name + '"', 'reward-' + r.key);
+          });
+          (data.missed || []).forEach(function (m) {
+            var text = 'คุณขาดละหมาด' + m.label + (m.yesterday ? 'เมื่อวาน' : 'วันนี้');
+            alertQueue.push({ kind: 'missed', text: text });
+            systemNotify('ขาดละหมาด' + m.label, text, 'missed-' + m.date + '-' + m.prayer);
+          });
+          var due = data.due_soon;
+          if (due) {
+            var key = 'dueSoonShown:' + new Date().toDateString() + ':' + due.prayer;
+            var seen = null;
+            try { seen = localStorage.getItem(key); } catch (e) { /* storage blocked */ }
+            if (!seen) {
+              try { localStorage.setItem(key, '1'); } catch (e) { /* storage blocked */ }
+              var dueText = 'ใกล้หมดเวลา' + due.label + ' อีก ' + due.minutes_left + ' นาที';
+              alertQueue.push({ kind: 'due', text: dueText });
+              systemNotify('ใกล้หมดเวลา' + due.label, dueText, 'due-' + due.prayer);
+            }
+          }
+          nextAlert();
+        })
+        .catch(function () { /* offline: try again next minute */ });
+    };
+
+    checkPrayerAlerts();
+    setInterval(checkPrayerAlerts, 60000);
+    window.uiCheckPrayerAlerts = checkPrayerAlerts; // e.g. right after a Quran listen logs a prayer
+  }
+
   // Back/forward cache restores the old page with the bar still running.
   window.addEventListener('pageshow', stop);
 })();

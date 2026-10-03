@@ -60,6 +60,7 @@ def _prayer_log_view(db: Session, user: User | None, city: str, prayer: dict) ->
     now = prayer_log.now_local()
     starts = prayer_log.start_times(user.city, now.date()) or {}
     logs = prayer_log.logs_for_day(db, user.id, now.date())
+    states = prayer_log.day_states(db, user, now)
     return {
         "count": len(logs),
         "rows": {
@@ -68,6 +69,9 @@ def _prayer_log_view(db: Session, user: User | None, city: str, prayer: dict) ->
                 # epoch ms, so the page can unlock a row when its time arrives without a reload
                 "starts_ms": int(starts[key].timestamp() * 1000) if key in starts else 0,
                 "started": key not in starts or now >= starts[key],
+                # "missed" (red) / "due_soon" (orange) / None
+                "state": states.get(key, {}).get("state"),
+                "minutes_left": states.get(key, {}).get("minutes_left"),
             }
             for key in prayer_log.PRAYER_KEYS
         },

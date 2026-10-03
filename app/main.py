@@ -17,6 +17,7 @@ from app.routers import (
     community,
     donation,
     home,
+    mailbox,
     mosque_requests,
     mosques,
     news,
@@ -112,3 +113,4 @@ app.include_router(profile.router)
 app.include_router(admin.router)
 app.include_router(mosque_requests.router)
 app.include_router(reports.router)
+app.include_router(mailbox.router)

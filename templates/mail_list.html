@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}กล่องจดหมาย — {{ app_name }}{% endblock %}
+{% block page_title %}กล่องจดหมาย{% endblock %}
+
+{% block content %}
+<div class="section">
+  {% for m in mails %}
+  <a class="mail-row {% if not m.read_at %}is-unread{% endif %}" href="/mail/{{ m.id }}">
+    <span class="mail-row__ico {% if (m.gift_outfit_key or m.gift_background_key) %}is-gift{% endif %}">
+      <svg class="ico"><use href="#i-{{ 'gift' if (m.gift_outfit_key or m.gift_background_key) else 'mail' }}"></use></svg>
+    </span>
+    <span class="mail-row__body">
+      <span class="mail-row__title">{{ m.title }}</span>
+      <span class="card__meta">
+        {{ m.created_at|thai_day }}
+        {% if (m.gift_outfit_key or m.gift_background_key) %} · {% if m.claimed_at %}รับของขวัญแล้ว{% else %}<b class="mail-row__claim">มีของขวัญรอรับ</b>{% endif %}{% endif %}
+      </span>
+    </span>
+    {% if not m.read_at %}<span class="mail-row__dot" aria-label="ยังไม่ได้อ่าน"></span>{% endif %}
+  </a>
+  {% else %}
+  <div class="empty">
+    <svg class="ico" style="width:40px;height:40px;margin:0 auto 10px;color:var(--muted)"><use href="#i-mail"></use></svg>
+    ยังไม่มีจดหมาย
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

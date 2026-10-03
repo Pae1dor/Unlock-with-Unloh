@@ -20,21 +20,25 @@
     return node;
   }
 
-  function dotClass(entry, day) {
+  function isMissed(key, day) { return (day.missed || []).indexOf(key) !== -1; }
+
+  function dotClass(entry, day, key) {
     if (day.is_future) return 'pl-dot is-future';
-    if (!entry) return 'pl-dot';
+    if (!entry) return isMissed(key, day) ? 'pl-dot is-missed' : 'pl-dot';
     return 'pl-dot ' + (entry.status === 'qada' ? 'is-qada' : 'is-on-time') +
-      (entry.source === 'checkin' ? ' is-checkin' : '');
+      (entry.source === 'checkin' || entry.source === 'quran' ? ' is-' + entry.source : '');
   }
 
   function describe(prayer, day) {
     var entry = day.prayers[prayer.key];
     var head = prayer.label + ' · ' + day.label + ' — ';
     if (day.is_future) return head + 'ยังไม่ถึงวันนี้';
-    if (!entry) return head + 'ยังไม่ได้บันทึก';
+    if (!entry) return head + (isMissed(prayer.key, day) ? 'ขาด (เลยเวลาแล้ว)' : 'ยังไม่ได้บันทึก');
     var parts = ['บันทึกเวลา ' + entry.time + ' น.', entry.status === 'qada' ? 'ชดเชย' : 'ทันเวลา'];
     if (entry.source === 'checkin') {
       parts.push(entry.mosque_name ? 'ญะมาอะฮ์ที่' + entry.mosque_name : 'เช็คอินที่มัสยิด');
+    } else if (entry.source === 'quran') {
+      parts.push('จากการฟังอัลกุรอาน');
     }
     return head + parts.join(' · ');
   }
@@ -69,10 +73,12 @@
       data.days.forEach(function (day) {
         var cell = el('div', 'pw-cell' + (day.is_today ? ' is-today' : '') +
           (row === data.prayers.length - 1 ? ' is-last' : ''));
-        var dot = el('button', dotClass(day.prayers[prayer.key], day));
+        var dot = el('button', dotClass(day.prayers[prayer.key], day, prayer.key));
         dot.type = 'button';
         dot.setAttribute('aria-label', describe(prayer, day));
-        dot.innerHTML = '<svg class="ico"><use href="#i-mosque"></use></svg>';
+        var entry = day.prayers[prayer.key];
+        dot.innerHTML = '<svg class="ico"><use href="#i-' +
+          (entry && entry.source === 'quran' ? 'book' : 'mosque') + '"></use></svg>';
         dot.addEventListener('click', function () {
           grid.querySelectorAll('.pl-dot.is-selected').forEach(function (d) { d.classList.remove('is-selected'); });
           dot.classList.add('is-selected');

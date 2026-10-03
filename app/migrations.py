@@ -38,6 +38,7 @@ def prefix_mosque_ids(db: Session) -> int:
 ADDED_COLUMNS = [
     ("app_mosques", "is_active", "BOOLEAN NOT NULL DEFAULT TRUE"),
     ("app_mosques", "osm_ref", "VARCHAR(40)"),
+    ("mail", "gift_background_key", "VARCHAR(40)"),
 ]
 
 

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Shown bottom-right on every page; bump on each test round.
-APP_VERSION = "0.0.10"
+APP_VERSION = "0.0.13"
 load_dotenv(BASE_DIR / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")

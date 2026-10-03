@@ -23,6 +23,9 @@ QUICK_ACTIONS = [
 ]
 
 
+POPUP_NEWS_LIMIT = 10
+
+
 @router.get("/")
 def home(
     request: Request,
@@ -33,6 +36,11 @@ def home(
     now = now_local()
     prayer = get_prayer_times(city)
     latest_news = db.scalars(select(News).order_by(News.published_at.desc()).limit(3)).all()
+    # Swipeable news pop-up for logged-in users (newest first).
+    popup_news = (
+        db.scalars(select(News).order_by(News.published_at.desc()).limit(POPUP_NEWS_LIMIT)).all()
+        if user else []
+    )
 
     return templates.TemplateResponse(
         request,
@@ -45,6 +53,7 @@ def home(
             "prayer": prayer,
             "quick_actions": QUICK_ACTIONS,
             "latest_news": latest_news,
+            "popup_news": popup_news,
         },
     )
 

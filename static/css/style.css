@@ -553,7 +553,65 @@ button { font: inherit; }
 .pl-dot:focus-visible { outline: 2px solid var(--green-400); outline-offset: 2px; }
 .pl-dot.is-on-time { background: var(--green); border-color: var(--green); }
 .pl-dot.is-qada { background: var(--qada); border-color: var(--qada); }
-.pl-dot.is-checkin .ico { display: block; }
+.pl-dot.is-checkin .ico, .pl-dot.is-quran .ico { display: block; }
+span.pl-dot { display: inline-grid; place-items: center; cursor: default; }
+
+/* missed = red, time almost up = orange (only on prayers not logged yet) */
+:root { --missed: #c9372c; --due: #e8890c; }
+.pl-dot.is-missed { border-color: var(--missed); background: #fdecea; position: relative; }
+.pl-dot.is-missed::after { content: "\00d7"; color: var(--missed); font-size: 15px; font-weight: 700; line-height: 1; }
+.prayer-list__row.is-missed { background: #fdf1f0; color: var(--missed); }
+.prayer-list__row.is-missed .pl-dot { border-color: var(--missed); border-style: solid; background: #fdecea; }
+.prayer-list__row.is-missed .pl-dot::after { content: "\00d7"; color: var(--missed); font-size: 15px; font-weight: 700; line-height: 1; }
+.prayer-list__row.is-due-soon { background: #fff4e5; color: #b4650a; }
+.prayer-list__row.is-due-soon .pl-dot { border-color: var(--due); border-style: solid; animation: due-pulse 1.6s ease-in-out infinite; }
+@keyframes due-pulse { 50% { box-shadow: 0 0 0 5px rgba(232, 137, 12, .22); } }
+.pl-state {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.is-missed .pl-state { background: var(--missed); color: #fff; }
+.is-due-soon .pl-state { background: var(--due); color: #fff; }
+
+/* in-app alert banner (static/js/ui.js) */
+.prayer-alert {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 4500;
+  width: calc(100% - 32px);
+  max-width: 398px;
+  transform: translateX(-50%);
+  padding: 13px 16px;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
+  animation: alert-in .35s var(--ease) both;
+}
+.prayer-alert--missed { background: var(--missed); }
+.prayer-alert--due { background: var(--due); }
+.prayer-alert--reward { background: linear-gradient(90deg, #1B5E3A, #2f6fc6); }
+.prayer-alert.is-leaving { animation: alert-in .3s ease reverse both; }
+@keyframes alert-in { from { opacity: 0; transform: translate(-50%, -16px); } }
+.pl-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px 0;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.pl-hint .ico { width: 18px; height: 18px; flex: 0 0 auto; }
 .pl-dot.is-busy { opacity: .5; pointer-events: none; }
 .prayer-list__row.is-locked { color: #a9b3ae; }
 .prayer-list__row.is-locked .pl-dot { border-color: #dde3df; border-style: dashed; }
@@ -1555,6 +1613,33 @@ label > .field__hint { display: inline; margin: 0 0 0 4px; }
 .outfit-card--limited .outfit-card__thumb { background: linear-gradient(160deg, #fbf1d6, #e9cf8f); }
 .outfit-card--limited .outfit-card__rarity { background: linear-gradient(90deg, #b8944d, #e0bd6a); color: #fff; }
 
+/* rare = blue card */
+.outfit-card--rare { border-color: #9cc0ec; }
+.outfit-card--rare .outfit-card__thumb { background: linear-gradient(160deg, #e3efff, #a9c9f1); }
+.outfit-card--rare .outfit-card__rarity { background: linear-gradient(90deg, #2f6fc6, #5aa0ef); color: #fff; }
+
+/* not earned yet: dimmed, padlock + how to earn it */
+.outfit-opt.is-locked { cursor: not-allowed; }
+.outfit-opt.is-locked .outfit-card__thumb img { filter: grayscale(1) brightness(.55); opacity: .7; }
+.outfit-card__lock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+.outfit-card__lock .ico { width: 22px; height: 22px; }
+
 .outfit-opt input:checked + .outfit-card { border-color: var(--green); box-shadow: 0 0 0 2px var(--green); }
 .outfit-opt input:checked + .outfit-card .outfit-card__name { color: var(--green); }
 .outfit-opt input:focus-visible + .outfit-card { outline: 2px solid var(--green-400); outline-offset: 2px; }
@@ -1612,6 +1697,262 @@ label > .field__hint { display: inline; margin: 0 0 0 4px; }
 }
 @keyframes welcome-pop { from { opacity: 0; transform: scale(.6); } }
 @keyframes welcome-fill { to { width: 100%; } }
+
+/* ---------- latest-news pop-up on the home page (static/js/news-popup.js) ---------- */
+.news-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  background: rgba(15, 25, 20, .55);
+  animation: pop-fade .25s ease both;
+}
+.news-pop[hidden] { display: none; }
+.news-pop__card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  border-radius: 22px;
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+  animation: pop-up .35s var(--ease) both;
+}
+.news-pop.is-leaving { animation: pop-fade .25s ease reverse both; }
+.news-pop.is-leaving .news-pop__card { animation: pop-up .25s ease reverse both; }
+@keyframes pop-fade { from { opacity: 0; } }
+@keyframes pop-up { from { opacity: 0; transform: translateY(24px) scale(.96); } }
+
+.news-pop__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .28);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.news-pop__hero {
+  position: relative;
+  height: 130px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, .6);
+}
+.news-pop__hero .ico { width: 46px; height: 46px; }
+.news-pop__tag {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #b8944d, #e0bd6a);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.news-pop__body { padding: 16px 18px 14px; }
+.news-pop__title { margin: 8px 0 6px; font-size: 18px; line-height: 1.4; }
+.news-pop__summary {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #46524d;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-pop__read { margin-top: 12px; }
+
+/* swipeable strip of news (scroll-snap = native finger swipe) */
+.news-pop__track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.news-pop__track::-webkit-scrollbar { display: none; }
+.news-pop__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+}
+.news-pop__slide .news-pop__body { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+.news-pop__slide .card__meta { margin: 0 0 12px; }
+.news-pop__slide .news-pop__read { margin-top: auto; width: 100%; }
+.news-pop__count {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .28);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.news-pop__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 12px 10px;
+}
+.news-pop__arrow {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.news-pop__dots { display: flex; gap: 6px; }
+.news-pop__dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  transition: width .2s var(--ease), background .2s;
+}
+.news-pop__dots button.is-active { width: 20px; background: var(--green); }
+.news-pop__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px 10px 16px;
+  border-top: 1px solid var(--line);
+}
+.news-pop__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.news-pop__check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.news-pop__foot button {
+  padding: 8px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .news-pop__foot button:hover { background: var(--green); color: #fff; }
+  .news-pop__close:hover { background: rgba(0, 0, 0, .45); }
+}
+
+/* ---------- header buttons: mailbox + bell ---------- */
+.header-actions { display: flex; gap: 6px; flex: 0 0 auto; min-width: 78px; justify-content: flex-end; }
+.header-actions--left { justify-content: flex-start; }
+.header-actions .topbar__btn { position: relative; }
+.hero .header-actions .topbar__btn { background: rgba(255, 255, 255, .14); }
+.header-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--green);
+}
+
+/* ---------- mailbox ---------- */
+.mail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 13px 14px;
+  margin-bottom: 9px;
+  transition: transform .22s var(--ease), box-shadow .22s var(--ease);
+}
+@media (hover: hover) { .mail-row:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); } }
+.mail-row__ico {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.mail-row__ico.is-gift { background: var(--gold-soft); color: #8a6a1f; }
+.mail-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mail-row__title { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row.is-unread .mail-row__title { font-weight: 700; }
+.mail-row__claim { color: #b8862a; }
+.mail-row__dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: #e5484d; }
+
+.gift-card {
+  position: relative;
+  margin-top: 4px;
+  padding: 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.gift-card__label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  z-index: 1;
+}
+.gift-card__thumb { height: 240px; border-radius: 12px; overflow: hidden; }
+.gift-card__thumb--bg img { object-fit: cover; padding: 0; }
+.gift-card__info { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0; }
+.gift-card__name { font-size: 17px; font-weight: 700; }
 
 /* ---------- beta version label, bottom-right just above the tab bar ---------- */
 .version-tag {
@@ -1745,7 +2086,7 @@ a:focus-visible, button:focus-visible {
 /* fixed overlays are skipped: the animation's `transform` would override their own
    centering (e.g. the Quran audio bar's translateX(-50%)) */
 .screen > * { animation: rise .45s var(--ease) both; }
-.screen > .audio-bar, .screen > .geo-prompt { animation: none; }
+.screen > .audio-bar, .screen > .geo-prompt, .screen > .news-pop { animation: none; }
 .screen > *:nth-child(2) { animation-delay: .05s; }
 .screen > *:nth-child(3) { animation-delay: .1s; }
 .screen > *:nth-child(4) { animation-delay: .15s; }

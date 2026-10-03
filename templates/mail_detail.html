@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ mail.title }} — {{ app_name }}{% endblock %}
+{% block page_title %}จดหมาย{% endblock %}
+
+{% block content %}
+{% if claimed_now and mail.claimed_at %}
+<div class="notice notice--ok">รับของขวัญแล้ว! ไปใส่ชุดได้ที่หน้าเปลี่ยนชุด</div>
+{% endif %}
+
+<article class="section">
+  <div class="card">
+    <h2 class="card__title" style="font-size:17px">{{ mail.title }}</h2>
+    <p class="card__meta">จากทีมงาน · {{ mail.created_at|thai_day }}</p>
+    {% if mail.body %}<p class="card__text" style="white-space:pre-line">{{ mail.body }}</p>{% endif %}
+  </div>
+
+  {% if gift %}
+  <div class="gift-card outfit-card--{{ gift.rarity }}">
+    <span class="gift-card__label">ของขวัญ · ชุด</span>
+    <div class="gift-card__thumb outfit-card__thumb"><img src="{{ gift.image }}" alt="{{ gift.name }}"></div>
+    <div class="gift-card__info">
+      <span class="outfit-card__rarity" style="position:static">{{ rarity_labels.get(gift.rarity, gift.rarity) }}</span>
+      <div class="gift-card__name">{{ gift.name }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if gift_bg %}
+  <div class="gift-card outfit-card--{{ gift_bg.rarity }}" style="margin-top:12px">
+    <span class="gift-card__label">ของขวัญ · พื้นหลัง</span>
+    <div class="gift-card__thumb gift-card__thumb--bg outfit-card__thumb">
+      {% if gift_bg.image %}<img src="{{ gift_bg.image }}" alt="{{ gift_bg.name }}">{% endif %}
+    </div>
+    <div class="gift-card__info">
+      <span class="outfit-card__rarity" style="position:static">{{ rarity_labels.get(gift_bg.rarity, gift_bg.rarity) }}</span>
+      <div class="gift-card__name">{{ gift_bg.name }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if gift or gift_bg %}
+  {# One button claims everything attached to this mail. #}
+  <div style="margin-top:14px">
+    {% if mail.claimed_at %}
+    <a class="btn btn--ghost" href="/profile/outfits">รับแล้ว · ไปเปลี่ยนชุดและพื้นหลัง</a>
+    {% else %}
+    <form method="post" action="/mail/{{ mail.id }}/claim">
+      <button class="btn" type="submit"><svg class="ico"><use href="#i-gift"></use></svg>{% if gift and gift_bg %}รับของขวัญทั้งหมด{% else %}รับของขวัญ{% endif %}</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</article>
+{% endblock %}

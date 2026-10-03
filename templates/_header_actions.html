@@ -1,0 +1,11 @@
+{# Mailbox + notifications buttons, top right of every header. #}
+{% set unread = user.unread_mail_count if user else 0 %}
+<div class="header-actions">
+  <a class="topbar__btn" href="{% if user %}/mail{% else %}/login?next=/mail{% endif %}" aria-label="กล่องจดหมาย{% if unread %} ({{ unread }} ฉบับใหม่){% endif %}">
+    <svg class="ico"><use href="#i-mail"></use></svg>
+    {% if unread %}<span class="header-badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}
+  </a>
+  <a class="topbar__btn" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
+    <svg class="ico"><use href="#i-bell"></use></svg>
+  </a>
+</div>

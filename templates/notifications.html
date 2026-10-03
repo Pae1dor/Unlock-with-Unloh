@@ -1,6 +1,30 @@
 {% extends "base.html" %}
 {% set back_url = "/prayer-times" %}
 {% block title %}การแจ้งเตือนละหมาด — {{ app_name }}{% endblock %}
+
+{% block scripts %}
+<script>
+  // Ask the browser for permission to show phone/computer notifications (needs a tap).
+  (function () {
+    var btn = document.getElementById('notify-permission');
+    var note = document.getElementById('notify-permission-note');
+    if (!('Notification' in window)) {
+      note.textContent = 'เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน จะแสดงเฉพาะในแอป';
+      note.hidden = false;
+      return;
+    }
+    function show() {
+      var p = Notification.permission;
+      btn.hidden = p !== 'default';
+      note.hidden = p === 'default';
+      note.textContent = p === 'granted' ? 'เปิดการแจ้งเตือนบนเครื่องนี้แล้ว'
+        : 'การแจ้งเตือนถูกปิดอยู่ เปิดได้ที่การตั้งค่าของเบราว์เซอร์';
+    }
+    btn.addEventListener('click', function () { Notification.requestPermission().then(show); });
+    show();
+  })();
+</script>
+{% endblock %}
 {% block page_title %}การแจ้งเตือน{% endblock %}
 
 {% block content %}
@@ -8,7 +32,14 @@
 <div class="notice notice--ok">บันทึกการตั้งค่าแล้ว</div>
 {% endif %}
 
-<p class="map-note" style="padding:14px 16px 0">เลือกเวลาละหมาดที่ต้องการให้แจ้งเตือน แยกเปิด/ปิดได้รายเวลา</p>
+<p class="map-note" style="padding:14px 16px 0">เลือกเวลาละหมาดที่ต้องการให้แจ้งเตือน แยกเปิด/ปิดได้รายเวลา ระบบจะเตือนเมื่อใกล้หมดเวลา และแจ้งหนึ่งครั้งเมื่อขาดละหมาดเวลานั้น</p>
+
+<div class="section">
+  <button type="button" class="btn btn--ghost" id="notify-permission" hidden>
+    <svg class="ico"><use href="#i-bell"></use></svg>เปิดการแจ้งเตือนบนเครื่องนี้
+  </button>
+  <p class="card__meta" id="notify-permission-note" hidden></p>
+</div>
 
 <form class="section" method="post" action="/notifications">
   <div class="list-card">
