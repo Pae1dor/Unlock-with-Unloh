@@ -20,7 +20,7 @@ No build step, no npm, no framework. Just `pip install`, `uvicorn`, and a browse
 | ข่าวสาร | `/news`, `/news/{id}` | Category tabs (ทั้งหมด / บทความ / กิจกรรม / ประกาศ) |
 | ชุมชน | `/community`, `/community/new`, `/community/{id}` | Forum with AJAX likes and comments |
 | บัญชี | `/profile` | Edit name / city / phone, donation history, logout |
-| Auth | `/register`, `/login`, `/logout` | Email + password, bcrypt, JWT in an httpOnly cookie |
+| Auth | `/register`, `/login`, `POST /logout` | Email + password, bcrypt, JWT in an httpOnly cookie |
 
 JSON endpoints used by the front-end JS: `/api/mosques`, `/api/prayer-notifications`,
 `/api/community/{id}/like`, `/api/community/{id}/comments`.

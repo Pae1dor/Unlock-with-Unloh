@@ -168,7 +168,18 @@ def login_submit(
 
 
 @router.get("/logout")
-def logout():
+def logout_page():
+    """Logging out is a POST (the button on /profile); a GET, from an old link or another
+    site's <img>, only goes to the page that has the button."""
+    return RedirectResponse("/profile", status_code=303)
+
+
+@router.post("/logout")
+def logout(request: Request):
     response = RedirectResponse("/", status_code=303)
+    # SameSite=Lax keeps the cookie off another site's POST, but the response could still
+    # clear it; browsers say where a request came from, so refuse cross-site ones.
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        return response
     response.delete_cookie(COOKIE_NAME, path="/")
     return response
