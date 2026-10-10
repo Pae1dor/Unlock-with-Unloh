@@ -20,7 +20,7 @@ No build step, no npm, no framework. Just `pip install`, `uvicorn`, and a browse
 | ข่าวสาร | `/news`, `/news/{id}` | Category tabs (ทั้งหมด / บทความ / กิจกรรม / ประกาศ) |
 | ชุมชน | `/community`, `/community/new`, `/community/{id}` | Forum with AJAX likes and comments |
 | บัญชี | `/profile` | Edit name / city / phone, donation history, logout |
-| Auth | `/register`, `/login`, `/logout` | Email + password, bcrypt, JWT in an httpOnly cookie |
+| Auth | `/register`, `/login`, `POST /logout` | Email + password, bcrypt, JWT in an httpOnly cookie |
 
 JSON endpoints used by the front-end JS: `/api/mosques`, `/api/prayer-notifications`,
 `/api/community/{id}/like`, `/api/community/{id}/comments`.
@@ -70,8 +70,9 @@ are interchangeable** via `DATABASE_URL`.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | `sqlite:///./dev.db` | SQLAlchemy connection string |
-| `SECRET_KEY` | dev placeholder | **Change in production** — signs the JWT |
+| `SECRET_KEY` | none — **required** | Signs the JWT. The app refuses to start without one (or with the placeholder, or under 32 chars); `.\dev.ps1` writes one into `.env` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` (7 days) | Cookie / token lifetime |
+| `COOKIE_SECURE` | `auto` | Login cookie's Secure flag: `auto` when the request came over https, `always` behind an https proxy uvicorn does not trust |
 | `DEFAULT_CITY` | `กรุงเทพมหานคร` | Fallback city for prayer times |
 
 ---
