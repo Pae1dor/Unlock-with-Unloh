@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, hash_password, verify_password
-from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, COOKIE_NAME
+from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, COOKIE_NAME, COOKIE_SECURE
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
@@ -23,11 +23,16 @@ def _safe_next(value: str | None) -> str:
     return value
 
 
-def _set_cookie(response: RedirectResponse, user_id: int) -> RedirectResponse:
+def _is_secure(request: Request) -> bool:
+    return COOKIE_SECURE == "always" or request.url.scheme == "https"
+
+
+def _set_cookie(request: Request, response: RedirectResponse, user_id: int) -> RedirectResponse:
     response.set_cookie(
         key=COOKIE_NAME,
         value=create_access_token(user_id),
         httponly=True,
+        secure=_is_secure(request),
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
@@ -140,7 +145,7 @@ def login_submit(
     response = RedirectResponse(_safe_next(next), status_code=303)
     # One-shot flag: the next page shows the welcome screen, then static/js/ui.js clears it.
     response.set_cookie(WELCOME_COOKIE, "1", max_age=60, samesite="lax", path="/")
-    return _set_cookie(response, user.id)
+    return _set_cookie(request, response, user.id)
 
 
 @router.get("/logout")

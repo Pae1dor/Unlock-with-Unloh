@@ -30,6 +30,10 @@ DEFAULT_CITY = os.getenv("DEFAULT_CITY", "กรุงเทพมหานค�
 COUNTRY = "Thailand"
 
 COOKIE_NAME = "access_token"
+# The login cookie's Secure flag. "auto" sets it whenever the request arrived over https
+# (directly, or via a proxy uvicorn trusts, such as dev.ps1's cloudflared tunnel on
+# 127.0.0.1); "always" forces it, for an https proxy uvicorn does not trust.
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "auto").strip().lower()
 CITY_COOKIE = "city"
 
 # Sent to OpenStreetMap services (Overpass, Nominatim); their policies require an app identifier.

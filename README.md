@@ -72,6 +72,7 @@ are interchangeable** via `DATABASE_URL`.
 | `DATABASE_URL` | `sqlite:///./dev.db` | SQLAlchemy connection string |
 | `SECRET_KEY` | none — **required** | Signs the JWT. The app refuses to start without one (or with the placeholder, or under 32 chars); `.\dev.ps1` writes one into `.env` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` (7 days) | Cookie / token lifetime |
+| `COOKIE_SECURE` | `auto` | Login cookie's Secure flag: `auto` when the request came over https, `always` behind an https proxy uvicorn does not trust |
 | `DEFAULT_CITY` | `กรุงเทพมหานคร` | Fallback city for prayer times |
 
 ---
