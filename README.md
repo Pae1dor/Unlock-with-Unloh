@@ -70,7 +70,7 @@ are interchangeable** via `DATABASE_URL`.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | `sqlite:///./dev.db` | SQLAlchemy connection string |
-| `SECRET_KEY` | dev placeholder | **Change in production** — signs the JWT |
+| `SECRET_KEY` | none — **required** | Signs the JWT. The app refuses to start without one (or with the placeholder, or under 32 chars); `.\dev.ps1` writes one into `.env` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` (7 days) | Cookie / token lifetime |
 | `DEFAULT_CITY` | `กรุงเทพมหานคร` | Fallback city for prayer times |
 

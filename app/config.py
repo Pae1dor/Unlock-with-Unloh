@@ -11,7 +11,18 @@ APP_VERSION = "0.0.14"
 load_dotenv(BASE_DIR / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
+# Signs the login JWT. There is deliberately no fallback: a key that is missing, short or
+# one of the public placeholders would let anyone forge a login (an admin's included).
+# .\dev.ps1 writes a private one into .env on first run.
+_PUBLIC_SECRET_KEYS = frozenset({"change-me-to-a-long-random-string", "dev-secret-key-change-me"})
+_MIN_SECRET_KEY_LENGTH = 32
+SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
+if SECRET_KEY in _PUBLIC_SECRET_KEYS or len(SECRET_KEY) < _MIN_SECRET_KEY_LENGTH:
+    raise RuntimeError(
+        "SECRET_KEY is missing, shorter than 32 characters, or still the public placeholder. "
+        "Run .\\dev.ps1 once (it writes a private key into .env), or set SECRET_KEY in .env to "
+        'the output of: python -c "import secrets; print(secrets.token_hex(32))"'
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))
 
