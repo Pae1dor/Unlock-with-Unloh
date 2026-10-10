@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import login_throttle
 from app.auth import create_access_token, hash_password, verify_password
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, COOKIE_NAME, COOKIE_SECURE
 from app.database import get_db
@@ -126,22 +127,40 @@ def login_submit(
     db: Session = Depends(get_db),
 ):
     email = email.strip().lower()
-    user = db.scalar(select(User).where(User.email == email))
-    if user is None or not verify_password(password, user.hashed_password):
+    client_ip = request.client.host if request.client else "unknown"
+
+    def fail(message: str, status_code: int, headers: dict[str, str] | None = None):
         return templates.TemplateResponse(
             request,
             "login.html",
             {
                 "user": None,
                 "active": "profile",
-                "error": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+                "error": message,
                 "registered": False,
                 "next": _safe_next(next),
                 "form": {"email": email},
             },
-            status_code=401,
+            status_code=status_code,
+            headers=headers,
         )
 
+    # Checked before the password, so a locked-out guesser learns nothing more.
+    wait = login_throttle.retry_after(email, client_ip)
+    if wait > 0:
+        minutes = max(1, -(-wait // 60))
+        return fail(
+            f"เข้าสู่ระบบผิดหลายครั้งเกินไป กรุณารอประมาณ {minutes} นาทีแล้วลองใหม่",
+            429,
+            {"Retry-After": str(wait)},
+        )
+
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None or not verify_password(password, user.hashed_password):
+        login_throttle.record_failure(email, client_ip)
+        return fail("อีเมลหรือรหัสผ่านไม่ถูกต้อง", 401)
+
+    login_throttle.record_success(email)
     response = RedirectResponse(_safe_next(next), status_code=303)
     # One-shot flag: the next page shows the welcome screen, then static/js/ui.js clears it.
     response.set_cookie(WELCOME_COOKIE, "1", max_age=60, samesite="lax", path="/")
