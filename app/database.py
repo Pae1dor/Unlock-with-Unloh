@@ -35,6 +35,7 @@ def init_db() -> None:
 
     Base.metadata.create_all(engine)
 
+    # Added columns and data fixes for databases created by older versions.
     from app import migrations
 
     with SessionLocal() as db:

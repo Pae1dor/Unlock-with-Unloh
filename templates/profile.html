@@ -124,7 +124,9 @@
     </form>
   </div>
 
-  <a class="btn btn--danger" href="/logout">ออกจากระบบ</a>
+  <form method="post" action="/logout">
+    <button class="btn btn--danger" type="submit">ออกจากระบบ</button>
+  </form>
 </div>
 {% endblock %}
 

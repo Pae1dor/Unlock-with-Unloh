@@ -127,7 +127,8 @@ $keyIdx = -1
 for ($i = 0; $i -lt $envLines.Count; $i++) { if ($envLines[$i] -match '^\s*SECRET_KEY\s*=') { $keyIdx = $i } }
 $currentKey = ''
 if ($keyIdx -ge 0) { $currentKey = ($envLines[$keyIdx] -split '=', 2)[1].Trim().Trim('"', "'") }
-if (-not $currentKey -or $placeholderKeys -contains $currentKey) {
+# app/config.py refuses to start with a missing, placeholder or shorter-than-32 key.
+if (-not $currentKey -or $placeholderKeys -contains $currentKey -or $currentKey.Length -lt 32) {
     $bytes = New-Object byte[] 32
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
     $newLine = 'SECRET_KEY=' + (-join ($bytes | ForEach-Object { $_.ToString('x2') }))
