@@ -860,55 +860,6 @@ span.pl-dot { display: inline-grid; place-items: center; cursor: default; }
   padding: 0 20px;
 }
 
-/* ---------- bottom-tab FAB repurposed as whole-surah play control ---------- */
-.tab__fab--audio { cursor: pointer; }
-/* Ring hugs the outside of the FAB. Offsets count from the padding box, so they include
-   the FAB's 4px white border: (64 - 46) / 2 = 9px. It sits on the light page, not on the
-   green button, so it is drawn in green (CSS overrides the white stroke attributes). */
-.fab-progress {
-  position: absolute;
-  top: -9px;
-  left: -9px;
-  width: 64px;
-  height: 64px;
-  pointer-events: none;
-}
-.fab-progress circle { stroke: rgba(27, 94, 58, .16); }
-#fab-progress-ring { stroke: var(--green-400); transition: stroke-dashoffset .25s linear; }
-
-/* ---------- sticky whole-surah audio bar ---------- */
-.audio-bar {
-  position: fixed;
-  bottom: 78px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 398px;
-  z-index: 25;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--card);
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
-  padding: 10px 14px;
-}
-.audio-bar__btn {
-  flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--green);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-.audio-bar__info { flex: 1; min-width: 0; }
-.audio-bar__ayah { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
-.audio-bar__track { height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.audio-bar__fill { height: 100%; width: 0%; background: var(--green); border-radius: 999px; transition: width .2s linear; }
 .ayah__ar {
   font-family: "Traditional Arabic", "Amiri", "Scheherazade New", "Segoe UI", serif;
   font-size: 24px;
@@ -1954,6 +1905,119 @@ label > .field__hint { display: inline; margin: 0 0 0 4px; }
 .gift-card__info { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0; }
 .gift-card__name { font-size: 17px; font-weight: 700; }
 
+/* ---------- where will you pray? (prayer-times) ---------- */
+.pray-where {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+.pray-where__head { font-size: 14.5px; margin-bottom: 11px; }
+.pray-where__head b { color: var(--green); }
+.pray-where__opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pray-where__opt {
+  font: inherit;
+  color: inherit;
+  background: var(--card);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  text-align: center;
+  transition: border-color .18s, transform .22s var(--ease), box-shadow .22s var(--ease);
+}
+.pray-where__opt:active { transform: scale(.97); }
+@media (hover: hover) {
+  .pray-where__opt:hover { border-color: var(--green-400); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+}
+.pray-where__ico {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.pray-where__ico .ico { width: 24px; height: 24px; }
+.pray-where__title { font-size: 14.5px; font-weight: 700; }
+.pray-where__sub { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+
+/* ---------- yesterday check: forced pop-up + answer page ---------- */
+.yd-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 5500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  background: rgba(15, 25, 20, .62);
+  animation: pop-fade .25s ease both;
+}
+body.has-yd-pop { overflow: hidden; }
+.yd-pop__card {
+  width: 100%;
+  max-width: 340px;
+  padding: 24px 20px 20px;
+  border-radius: 22px;
+  background: var(--card);
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+  animation: pop-up .35s var(--ease) both;
+}
+.yd-pop__ico {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: #fdecea;
+  color: var(--missed);
+}
+.yd-pop__ico .ico { width: 30px; height: 30px; }
+.yd-pop__title { margin: 0 0 4px; font-size: 18px; }
+.yd-pop__names { margin: 0 0 12px; color: var(--missed); font-weight: 700; font-size: 14px; }
+.yd-pop__q { margin: 0 0 16px; font-size: 15px; }
+
+.yd-intro { margin: 0 0 12px; font-size: 14.5px; line-height: 1.6; }
+.yd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+.yd-row:first-child { border-top: 0; }
+.yd-row__name { font-weight: 700; font-size: 14.5px; }
+.yd-choice { display: flex; gap: 6px; }
+.yd-choice label { cursor: pointer; }
+.yd-choice input { position: absolute; opacity: 0; width: 0; height: 0; }
+.yd-choice span {
+  display: block;
+  padding: 7px 11px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--muted);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.yd-choice input[value="prayed"]:checked + span { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+.yd-choice input[value="missed"]:checked + span { background: var(--missed); border-color: var(--missed); color: #fff; font-weight: 600; }
+.yd-choice input:focus-visible + span { outline: 2px solid var(--green-400); outline-offset: 2px; }
+.yd-state { font-size: 12.5px; color: var(--muted); }
+.yd-state--ok { color: var(--green); font-weight: 600; }
+.yd-state--missed { color: var(--missed); font-weight: 600; }
+.yd-done { text-align: center; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 18px; }
+.yd-done > .ico { width: 44px; height: 44px; margin: 0 auto 8px; color: var(--green); }
+.yd-done__title { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+
 /* ---------- beta version label, bottom-right just above the tab bar ---------- */
 .version-tag {
   position: fixed;
@@ -1968,8 +2032,6 @@ label > .field__hint { display: inline; margin: 0 0 0 4px; }
   pointer-events: none;
 }
 
-/* the Quran audio bar sits in the same spot */
-.phone:has(.audio-bar:not([hidden])) .version-tag { display: none; }
 
 /* ---------- bottom nav ---------- */
 .tabbar {
@@ -2086,7 +2148,7 @@ a:focus-visible, button:focus-visible {
 /* fixed overlays are skipped: the animation's `transform` would override their own
    centering (e.g. the Quran audio bar's translateX(-50%)) */
 .screen > * { animation: rise .45s var(--ease) both; }
-.screen > .audio-bar, .screen > .geo-prompt, .screen > .news-pop { animation: none; }
+.screen > .geo-prompt, .screen > .news-pop { animation: none; }
 .screen > *:nth-child(2) { animation-delay: .05s; }
 .screen > *:nth-child(3) { animation-delay: .1s; }
 .screen > *:nth-child(4) { animation-delay: .15s; }

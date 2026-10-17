@@ -61,7 +61,14 @@ def _prayer_log_view(db: Session, user: User | None, city: str, prayer: dict) ->
     starts = prayer_log.start_times(user.city, now.date()) or {}
     logs = prayer_log.logs_for_day(db, user.id, now.date())
     states = prayer_log.day_states(db, user, now)
+    running = prayer_log.current_prayer(user.city, now)
+    current = None
+    if running is not None and running[0] == now.date():
+        key = running[1]
+        current = {"key": key, "label": prayer_log.LABELS[key], "logged": key in logs,
+                   "source": logs[key].source if key in logs else None}
     return {
+        "current": current,
         "count": len(logs),
         "rows": {
             key: {

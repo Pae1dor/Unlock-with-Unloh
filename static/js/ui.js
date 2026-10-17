@@ -104,11 +104,37 @@
       }
     };
 
+    // "เมื่อวานคุณได้ละหมาดไหม": blocks the app (no close button) until yesterday's unlogged
+    // prayers are answered on /prayer-log/yesterday. Not shown on that page itself.
+    var yesterdayShown = false;
+    var showYesterdayCheck = function (pending) {
+      if (yesterdayShown || !pending.length || location.pathname === '/prayer-log/yesterday') return;
+      yesterdayShown = true;
+      var names = pending.map(function (p) { return p.label; }).join(', ');
+      var wrap = document.createElement('div');
+      wrap.className = 'yd-pop';
+      wrap.setAttribute('role', 'alertdialog');
+      wrap.setAttribute('aria-modal', 'true');
+      wrap.innerHTML =
+        '<div class="yd-pop__card">' +
+          '<div class="yd-pop__ico"><svg class="ico"><use href="#i-clock"></use></svg></div>' +
+          '<h2 class="yd-pop__title">เมื่อวานคุณขาดละหมาด</h2>' +
+          '<p class="yd-pop__names"></p>' +
+          '<p class="yd-pop__q">เมื่อวานคุณได้ละหมาดไหม?</p>' +
+          '<a class="btn" href="/prayer-log/yesterday">ไปตอบ / เช็คอินย้อนหลัง</a>' +
+        '</div>';
+      wrap.querySelector('.yd-pop__names').textContent = names + ' (' + pending.length + ' เวลา)';
+      document.body.appendChild(wrap);
+      document.body.classList.add('has-yd-pop');
+      wrap.querySelector('.btn').focus({ preventScroll: true });
+    };
+
     var checkPrayerAlerts = function () {
       fetch('/api/prayer-log/alerts', { headers: { Accept: 'application/json' } })
         .then(function (res) { return res.ok ? res.json() : null; })
         .then(function (data) {
           if (!data) return;
+          showYesterdayCheck(data.yesterday_pending || []);
           (data.rewards || []).forEach(function (r) {
             alertQueue.push({ kind: 'reward', text: '\ud83c\udf89 ละหมาดครบ 5 เวลา! ได้รับชุดใหม่ "' + r.name + '" แตะเพื่อใส่ชุด', href: '/profile/outfits' });
             systemNotify('ได้รับชุดใหม่!', 'ละหมาดครบ 5 เวลา ได้รับ "' + r.name + '"', 'reward-' + r.key);
@@ -137,7 +163,6 @@
 
     checkPrayerAlerts();
     setInterval(checkPrayerAlerts, 60000);
-    window.uiCheckPrayerAlerts = checkPrayerAlerts; // e.g. right after a Quran listen logs a prayer
   }
 
   // Back/forward cache restores the old page with the bar still running.

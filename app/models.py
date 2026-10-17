@@ -388,6 +388,8 @@ class PrayerNotice(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     prayer: Mapped[str] = mapped_column(String(10), nullable=False)
+    # "missed" once the user answered "ไม่ได้ละหมาด" on /prayer-log/yesterday (added later, see migrations.py)
+    answer: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 

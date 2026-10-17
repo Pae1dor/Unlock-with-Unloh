@@ -29,14 +29,15 @@
       <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %} {% if row and row.state %}is-{{ row.state|replace('_', '-') }}{% endif %}" data-prayer-key="{{ item.key }}">
         <span class="prayer-list__name">
           {% if row %}
-          {# Prayer log circle — status only: ticked by listening to the Quran in that prayer's
-             time (static/js/quran-player.js) or by a mosque check-in. #}
+          {# Prayer log circle (static/js/prayer-log.js): tap = prayed (at home / anywhere);
+             a mosque check-in ticks it too, with the mosque icon. #}
           {% set entry = row.log %}
-          <span class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source in ('checkin', 'quran') %} is-{{ entry.source }}{% endif %}{% endif %}"
-                data-prayer="{{ item.key|lower }}" data-starts="{{ row.starts_ms }}" role="img"
-                aria-label="{% if entry %}บันทึก{{ item.name_th }}แล้ว{% elif row.started %}ยังไม่ได้บันทึก{{ item.name_th }}{% else %}ยังไม่เข้าเวลา{{ item.name_th }}{% endif %}">
-            <svg class="ico"><use href="#i-{{ 'book' if entry and entry.source == 'quran' else 'mosque' }}"></use></svg>
-          </span>
+          <button type="button" class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source == 'checkin' %} is-checkin{% endif %}{% endif %}"
+                  data-prayer="{{ item.key|lower }}" data-name="{{ item.name_th }}" data-starts="{{ row.starts_ms }}"
+                  aria-label="{% if entry %}บันทึก{{ item.name_th }}แล้ว{% elif row.started %}บันทึกละหมาด{{ item.name_th }}{% else %}ยังไม่เข้าเวลา{{ item.name_th }}{% endif %}"
+                  {% if entry or not row.started %}disabled{% endif %}>
+            <svg class="ico"><use href="#i-mosque"></use></svg>
+          </button>
           {% endif %}
           {{ item.name_th }}
           {% if row and row.state == 'missed' %}<span class="pl-state">ขาด</span>
@@ -51,11 +52,39 @@
   <p class="map-note" style="padding-left:0">ระบบเวลาละหมาดหลักขัดข้องชั่วคราว เวลานี้คำนวณจากพิกัดจังหวัด อาจต่างจากประกาศของมัสยิดเล็กน้อย</p>
   {% endif %}
 </div>
-{% if log %}
-<a class="pl-hint" href="/quran">
-  <svg class="ico"><use href="#i-book"></use></svg>
-  <span>ฟังอัลกุรอานในช่วงเวลาละหมาด ระบบจะติ๊กเวลานั้นให้อัตโนมัติ</span>
+{% if log and log.current and not log.current.logged %}
+{# Where will you pray? Mosque -> check in there; at home -> tap to log it. #}
+<div class="section">
+  <div class="pray-where">
+    <div class="pray-where__head">ตอนนี้เวลา<b>{{ log.current.label }}</b> · คุณจะละหมาดที่ไหน?</div>
+    <div class="pray-where__opts">
+      <a class="pray-where__opt" href="/mosques">
+        <span class="pray-where__ico"><svg class="ico"><use href="#i-mosque"></use></svg></span>
+        <span class="pray-where__title">ที่มัสยิด</span>
+        <span class="pray-where__sub">เช็คอินที่มัสยิด ระบบบันทึกให้</span>
+      </a>
+      <button type="button" class="pray-where__opt" data-log-prayer="{{ log.current.key }}">
+        <span class="pray-where__ico"><svg class="ico"><use href="#i-home"></use></svg></span>
+        <span class="pray-where__title">ละหมาดที่บ้านแล้ว</span>
+        <span class="pray-where__sub">แตะเพื่อบันทึก{{ log.current.label }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% elif log and log.current %}
+<div class="notice notice--ok">ละหมาด{{ log.current.label }}แล้ว{% if log.current.source == 'checkin' %} (เช็คอินที่มัสยิด){% elif log.current.source == 'manual' %} (ที่บ้าน){% endif %}</div>
+{% elif log %}
+<a class="pl-hint" href="/mosques">
+  <svg class="ico"><use href="#i-mosque"></use></svg>
+  <span>ละหมาดที่บ้าน แตะวงกลมหน้าเวลานั้นเพื่อบันทึก · ละหมาดที่มัสยิด เช็คอินที่มัสยิดได้เลย</span>
 </a>
+{% endif %}
+{% if log %}
+<div class="pl-toast" id="pl-toast" role="status" aria-live="polite" hidden>
+  <span id="pl-toast-text">บันทึกแล้ว</span>
+  <span class="pl-toast__sep" id="pl-toast-sep" aria-hidden="true">·</span>
+  <button type="button" class="pl-toast__undo" id="pl-toast-undo">ยกเลิก</button>
+</div>
 {% endif %}
 {% else %}
 <div class="notice notice--error">{{ prayer.error }}</div>

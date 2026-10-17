@@ -171,39 +171,6 @@ def current_prayer(city: str, now: datetime) -> tuple[date, str] | None:
     return None
 
 
-def log_listen(db: Session, user: User, now: datetime) -> tuple[PrayerLog, bool] | None:
-    """Listening to the Quran during a prayer's time ticks that prayer (source "quran").
-
-    Returns (row, created) or None when no prayer's time is running. Never touches a row
-    that already exists (manual, check-in or an earlier listen).
-    """
-    current = current_prayer(user.city, now)
-    if current is None:
-        return None
-    day, prayer = current
-    existing = logs_for_day(db, user.id, day).get(prayer)
-    if existing is not None:
-        return existing, False
-
-    row = PrayerLog(
-        user_id=user.id,
-        date=day,
-        prayer=prayer,
-        logged_at=_utc(now),
-        status="on_time",  # inside the window by definition
-        source="quran",
-        in_congregation=False,
-    )
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        return logs_for_day(db, user.id, day)[prayer], False
-    db.refresh(row)
-    return row, True
-
-
 DUE_SOON_MINUTES = 30
 
 
@@ -283,6 +250,71 @@ def new_missed_notices(db: Session, user: User, now: datetime) -> list[dict]:
         created.append({"date": day.isoformat(), "prayer": prayer, "label": LABELS[prayer],
                         "yesterday": day != now.date()})
     return created
+
+
+def thai_date(d: date) -> str:
+    return f"{d.day} {THAI_MONTHS_SHORT[d.month - 1]} {d.year + 543}"
+
+
+def yesterday_status(db: Session, user: User, now: datetime) -> dict | None:
+    """Yesterday's five prayers for the "เมื่อวานคุณได้ละหมาดไหม" check.
+
+    Each prayer is "logged", "missed" (user answered they didn't pray it), "pending" (no log,
+    no answer yet), or "skip" (its time was over before the account existed). None while
+    yesterday's Isha is still running (before this morning's Fajr) or before the account existed.
+    """
+    day = now.date() - timedelta(days=1)
+    if day < _tracking_since(user):
+        return None
+    today_starts = start_times(user.city, now.date())
+    if today_starts is not None and now < today_starts["fajr"]:
+        return None
+    logs = logs_for_day(db, user.id, day)
+    answered = set(db.scalars(select(PrayerNotice.prayer).where(
+        PrayerNotice.user_id == user.id, PrayerNotice.date == day, PrayerNotice.answer == "missed")).all())
+    joined = user.created_at if user.created_at.tzinfo else user.created_at.replace(tzinfo=timezone.utc)
+    prayers = []
+    for prayer in PRAYER_KEYS:
+        if prayer in logs:
+            state = "logged"
+        elif prayer in answered:
+            state = "missed"
+        else:
+            end = end_time(user.city, day, prayer)
+            state = "skip" if end is not None and end <= joined else "pending"
+        prayers.append({"key": prayer, "label": LABELS[prayer], "state": state, "log": logs.get(prayer)})
+    return {"date": day, "label": thai_date(day), "prayers": prayers,
+            "pending": [p for p in prayers if p["state"] == "pending"]}
+
+
+def answer_yesterday(db: Session, user: User, now: datetime, answers: dict[str, str]) -> None:
+    """Record the answers from /prayer-log/yesterday for prayers still pending.
+
+    "prayed" -> a log marked source "confirm" (self-reported after the fact; it fills the grid
+    but does not count towards outfit rewards); "missed" -> remembered so the check stops asking.
+    """
+    status = yesterday_status(db, user, now)
+    if status is None:
+        return
+    day = status["date"]
+    pending = {p["key"] for p in status["pending"]}
+    for prayer, answer in answers.items():
+        if prayer not in pending:
+            continue
+        if answer == "prayed":
+            db.add(PrayerLog(user_id=user.id, date=day, prayer=prayer, logged_at=_utc(now),
+                             status="on_time", source="confirm", in_congregation=False))
+        elif answer == "missed":
+            notice = db.scalar(select(PrayerNotice).where(
+                PrayerNotice.user_id == user.id, PrayerNotice.date == day, PrayerNotice.prayer == prayer))
+            if notice is None:
+                db.add(PrayerNotice(user_id=user.id, date=day, prayer=prayer, answer="missed"))
+            else:
+                notice.answer = "missed"
+        try:
+            db.commit()
+        except IntegrityError:  # a second tab answered the same prayer first
+            db.rollback()
 
 
 def undo_manual(db: Session, user: User, prayer: str, day: date) -> bool:

@@ -1,7 +1,8 @@
 """Outfit rewards: earn outfits from the prayer log (catalog: app/outfits.py, "unlock").
 
-five_prayers — all five prayers logged on the same day, any day, from any source
-(listening to the Quran, a mosque check-in, ...).
+five_prayers — all five prayers logged ON TIME on the same day, any day (tapped as prayed at
+home, a mosque check-in, ...). Qada (logged after the time ended) and next-day "confirm"
+answers don't count, so the reward can't be farmed by ticking everything at the end of the day.
 """
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -15,7 +16,9 @@ from app.services.prayer_log import PRAYER_KEYS
 def has_full_day(db: Session, user_id: int) -> bool:
     day = db.scalar(
         select(PrayerLog.date)
-        .where(PrayerLog.user_id == user_id)
+        # Only prayers logged on time count: "qada" (tapped after the time ended) and "confirm"
+        # (answered "I prayed" the next day) are allowed in the log but never earn outfits.
+        .where(PrayerLog.user_id == user_id, PrayerLog.status == "on_time", PrayerLog.source != "confirm")
         .group_by(PrayerLog.date)
         .having(func.count(PrayerLog.id) >= len(PRAYER_KEYS))
         .limit(1)

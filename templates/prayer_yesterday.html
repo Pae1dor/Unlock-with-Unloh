@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}ละหมาดเมื่อวาน — {{ app_name }}{% endblock %}
+{% block page_title %}ละหมาดเมื่อวาน{% endblock %}
+
+{% block content %}
+{% if not day %}
+<div class="empty">ยังไม่มีอะไรให้ตอบสำหรับเมื่อวาน</div>
+{% elif not day.pending %}
+<div class="section">
+  <div class="yd-done">
+    <svg class="ico"><use href="#i-shield"></use></svg>
+    <p class="yd-done__title">{% if done %}บันทึกคำตอบแล้ว ขอบคุณครับ{% else %}ตอบครบแล้ว{% endif %}</p>
+    <p class="card__meta">เวลาที่ขาดไป ชดเชย (กอฎอ) ได้เสมอ อินชาอัลลอฮ์ วันนี้เริ่มใหม่ได้</p>
+    <a class="btn" href="/prayer-times" style="margin-top:14px">ไปหน้าเวลาละหมาดวันนี้</a>
+  </div>
+</div>
+{% else %}
+<form class="section" method="post" action="/prayer-log/yesterday">
+  <p class="yd-intro">เมื่อวาน <b>{{ day.label }}</b> ยังไม่มีบันทึก {{ day.pending|length }} เวลา<br>
+    เมื่อวานคุณได้ละหมาดเวลาเหล่านี้ไหม?</p>
+  <div class="list-card">
+    {% for p in day.prayers %}
+    <div class="yd-row">
+      <span class="yd-row__name">{{ p.label }}</span>
+      {% if p.state == 'pending' %}
+      <span class="yd-choice">
+        <label><input type="radio" name="answer_{{ p.key }}" value="prayed" required><span>ละหมาดแล้ว</span></label>
+        <label><input type="radio" name="answer_{{ p.key }}" value="missed"><span>ไม่ได้ละหมาด</span></label>
+      </span>
+      {% elif p.state == 'logged' %}
+      <span class="yd-state yd-state--ok">บันทึกแล้ว{% if p.log.source == 'checkin' %} · มัสยิด{% elif p.log.source == 'quran' %} · ฟังอัลกุรอาน{% elif p.log.source == 'confirm' %} · ยืนยันย้อนหลัง{% endif %}</span>
+      {% elif p.state == 'missed' %}
+      <span class="yd-state yd-state--missed">ไม่ได้ละหมาด</span>
+      {% else %}
+      <span class="yd-state">ก่อนสมัครสมาชิก</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="card__meta" style="margin:10px 2px 0">ตอบตามจริงนะครับ คำตอบนี้เห็นแค่คุณคนเดียว ("ละหมาดแล้ว" จะขึ้นในตารางว่ายืนยันย้อนหลัง และไม่นับรับชุดรางวัล)</p>
+  <button class="btn" type="submit" style="margin-top:14px">บันทึกคำตอบ</button>
+</form>
+{% endif %}
+{% endblock %}

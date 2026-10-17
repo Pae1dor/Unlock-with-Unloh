@@ -66,7 +66,7 @@ HIDDEN_RARITIES = {"limited"}
 
 # How a locked outfit is earned -> the hint shown on its card.
 UNLOCK_HINTS = {
-    "five_prayers": "ละหมาดครบ 5 เวลาใน 1 วัน",
+    "five_prayers": "ละหมาดทันเวลาครบ 5 เวลาใน 1 วัน",
 }
 
 RARITY_LABELS = {

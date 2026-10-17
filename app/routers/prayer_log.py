@@ -5,15 +5,17 @@ the request, and logs are never shown on community or other people's pages.
 """
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
+from app.deps import get_current_user, require_user
 from app.models import PrayerLog, User
 from app.schemas import PrayerLogIn
 from app.services import prayer_log as rules
 from app.services import rewards
+from app.templating import templates
 
 router = APIRouter(tags=["prayer-log"])
 
@@ -53,26 +55,6 @@ def log_prayer(
     except rules.NotYet:
         raise _fail(409, "not_yet", f"ยังไม่เข้าเวลา{rules.LABELS[body.prayer]}") from None
     return _out(row, len(rules.logs_for_day(db, user.id, now.date())))
-
-
-@router.post("/api/prayer-log/listen")
-def log_from_listening(
-    user: User | None = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Called by the Quran player after a short listen: ticks whichever prayer's time is now."""
-    user = _owner(user)
-    now = rules.now_local()
-    result = rules.log_listen(db, user, now)
-    if result is None:
-        return {"logged": False}
-    row, created = result
-    return {
-        "logged": True,
-        "created": created,
-        "label": rules.LABELS[row.prayer],
-        **_out(row, len(rules.logs_for_day(db, user.id, row.date))),
-    }
 
 
 @router.delete("/api/prayer-log/{prayer}")
@@ -122,5 +104,27 @@ def prayer_alerts(
     rewards.grant_earned(db, user)
     due = next(({"prayer": p, "label": rules.LABELS[p], "minutes_left": s["minutes_left"]}
                 for p, s in rules.day_states(db, user, now).items() if s["state"] == "due_soon"), None)
+    yesterday = rules.yesterday_status(db, user, now)
     return {"missed": rules.new_missed_notices(db, user, now), "due_soon": due,
-            "rewards": rewards.take_new_rewards(db, user)}
+            "rewards": rewards.take_new_rewards(db, user),
+            # non-empty -> ui.js shows the "เมื่อวานคุณได้ละหมาดไหม" pop-up (can't be dismissed)
+            "yesterday_pending": [{"prayer": p["key"], "label": p["label"]}
+                                  for p in (yesterday["pending"] if yesterday else [])]}
+
+
+@router.get("/prayer-log/yesterday")
+def yesterday_page(request: Request, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    """Answer for yesterday's unlogged prayers: prayed (forgot to log) or didn't pray."""
+    return templates.TemplateResponse(request, "prayer_yesterday.html", {
+        "user": user, "active": "home", "back_url": "/prayer-times",
+        "day": rules.yesterday_status(db, user, rules.now_local()),
+        "done": request.query_params.get("done") == "1",
+    })
+
+
+@router.post("/prayer-log/yesterday")
+async def yesterday_answer(request: Request, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    form = await request.form()
+    answers = {key[len("answer_"):]: str(value) for key, value in form.items() if key.startswith("answer_")}
+    rules.answer_yesterday(db, user, rules.now_local(), answers)
+    return RedirectResponse("/prayer-log/yesterday?done=1", status_code=303)

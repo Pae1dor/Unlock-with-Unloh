@@ -39,6 +39,10 @@
       parts.push(entry.mosque_name ? 'ญะมาอะฮ์ที่' + entry.mosque_name : 'เช็คอินที่มัสยิด');
     } else if (entry.source === 'quran') {
       parts.push('จากการฟังอัลกุรอาน');
+    } else if (entry.source === 'manual') {
+      parts.push('ละหมาดที่บ้าน (บันทึกเอง)');
+    } else if (entry.source === 'confirm') {
+      parts.push('ยืนยันย้อนหลัง');
     }
     return head + parts.join(' · ');
   }

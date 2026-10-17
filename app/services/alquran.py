@@ -4,18 +4,20 @@ Editions actually used (verified against GET /v1/edition?language=th — `th.tha
 is the only Thai translation the API exposes):
   * quran-uthmani  — Arabic, Uthmani script
   * th.thai        — Thai translation (King Fahad Quran Complex)
-  * ar.alafasy     — per-ayah audio (Mishary Alafasy), gives an .mp3 url per verse
 
-The 114-entry surah list and each fetched surah are cached in-process.
+The 114-entry surah list and each fetched surah are cached in-process only (Quran text is
+always fetched from an API, never stored by the app). If alquran.cloud doesn't answer,
+api.quran.com is asked instead (same King Fahad Thai translation there, id 51).
 """
 from __future__ import annotations
+
+import re
 
 import httpx
 
 BASE_URL = "https://api.alquran.cloud/v1"
 ARABIC_EDITION = "quran-uthmani"
 THAI_EDITION = "th.thai"
-AUDIO_EDITION = "ar.alafasy"
 
 # Thai transliterated surah names, index 0 == surah 1.
 SURAH_NAMES_TH = [
@@ -48,6 +50,18 @@ REVELATION_TH = {"Meccan": "มักกียะฮ์", "Medinan": "มะด�
 
 BOM = "\ufeff"  # zero-width no-break space the API prefixes to the first ayah
 
+# Fallback source when alquran.cloud doesn't answer.
+QURAN_COM_URL = "https://api.quran.com/api/v4"
+QURAN_COM_THAI = 51  # "Thai Translation (King Fahad Quran Complex)" — same as th.thai
+QURAN_COM_REVELATION = {"makkah": "มักกียะฮ์", "madinah": "มะดะนียะฮ์"}
+PRIMARY_TIMEOUT = 8.0  # fail over quickly instead of making the page hang
+
+_TAG = re.compile(r"<sup[^>]*>.*?</sup>|<[^>]+>", re.S)  # footnote markers / tags in translations
+
+# api.alquran.cloud also publishes an IPv6 address that some networks can't reach; httpx may
+# try it first and hang until the timeout. Connecting over IPv4 avoids that.
+_http = httpx.Client(transport=httpx.HTTPTransport(local_address="0.0.0.0"))
+
 _surah_list_cache: list[dict] | None = None
 _surah_cache: dict[int, dict] = {}
 
@@ -58,66 +72,85 @@ def thai_name(number: int) -> str:
     return f"ซูเราะฮ์ที่ {number}"
 
 
+def _list_from_alquran_cloud() -> list[dict]:
+    response = _http.get(f"{BASE_URL}/surah", timeout=PRIMARY_TIMEOUT)
+    response.raise_for_status()
+    surahs = []
+    for item in response.json().get("data") or []:
+        number = item.get("number")
+        if not number:
+            continue
+        surahs.append({
+            "number": number,
+            "name_th": thai_name(number),
+            "name_ar": item.get("name", ""),
+            "name_en": item.get("englishName", ""),
+            "meaning_en": item.get("englishNameTranslation", ""),
+            "ayah_count": item.get("numberOfAyahs", 0),
+            "revelation_th": REVELATION_TH.get(item.get("revelationType", ""), ""),
+        })
+    return surahs
+
+
+def _list_from_quran_com() -> list[dict]:
+    response = _http.get(f"{QURAN_COM_URL}/chapters", params={"language": "en"}, timeout=15.0)
+    response.raise_for_status()
+    surahs = []
+    for item in response.json().get("chapters") or []:
+        number = item.get("id")
+        if not number:
+            continue
+        surahs.append({
+            "number": number,
+            "name_th": thai_name(number),
+            "name_ar": item.get("name_arabic", ""),
+            "name_en": item.get("name_simple", ""),
+            "meaning_en": (item.get("translated_name") or {}).get("name", ""),
+            "ayah_count": item.get("verses_count", 0),
+            "revelation_th": QURAN_COM_REVELATION.get(item.get("revelation_place", ""), ""),
+        })
+    return surahs
+
+
 def get_surah_list() -> dict:
-    """Return {'ok': bool, 'surahs': [...], 'error': str|None}. Cached after first success."""
+    """Return {'ok': bool, 'surahs': [...], 'error': str|None}.
+
+    In-memory cache -> alquran.cloud -> api.quran.com.
+    """
     global _surah_list_cache
     if _surah_list_cache is not None:
         return {"ok": True, "surahs": _surah_list_cache, "error": None}
 
-    try:
-        response = httpx.get(f"{BASE_URL}/surah", timeout=15.0, follow_redirects=True)
-        response.raise_for_status()
-        payload = response.json()
-    except (httpx.HTTPError, ValueError):
+    surahs = []
+    for source in (_list_from_alquran_cloud, _list_from_quran_com):
+        try:
+            surahs = source()
+        except (httpx.HTTPError, ValueError):
+            surahs = []
+        if surahs:
+            break
+
+    if not surahs:
         return {
             "ok": False,
             "surahs": [],
             "error": "ไม่สามารถโหลดรายชื่อซูเราะฮ์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่",
         }
 
-    surahs = []
-    for item in payload.get("data") or []:
-        number = item.get("number")
-        if not number:
-            continue
-        surahs.append(
-            {
-                "number": number,
-                "name_th": thai_name(number),
-                "name_ar": item.get("name", ""),
-                "name_en": item.get("englishName", ""),
-                "meaning_en": item.get("englishNameTranslation", ""),
-                "ayah_count": item.get("numberOfAyahs", 0),
-                "revelation_th": REVELATION_TH.get(item.get("revelationType", ""), ""),
-            }
-        )
-
-    if not surahs:
-        return {"ok": False, "surahs": [], "error": "ไม่พบข้อมูลซูเราะฮ์จากบริการภายนอก"}
-
     _surah_list_cache = surahs
     return {"ok": True, "surahs": surahs, "error": None}
 
 
-def get_surah(number: int) -> dict:
-    """Fetch one surah with Arabic text, Thai translation and per-ayah audio urls."""
-    if number in _surah_cache:
-        return _surah_cache[number]
-
-    editions = f"{ARABIC_EDITION},{THAI_EDITION},{AUDIO_EDITION}"
+def _surah_from_alquran_cloud(number: int) -> dict | None:
+    editions = f"{ARABIC_EDITION},{THAI_EDITION}"
     try:
-        response = httpx.get(
-            f"{BASE_URL}/surah/{number}/editions/{editions}", timeout=20.0, follow_redirects=True
+        response = _http.get(
+            f"{BASE_URL}/surah/{number}/editions/{editions}", timeout=PRIMARY_TIMEOUT
         )
         response.raise_for_status()
         payload = response.json()
     except (httpx.HTTPError, ValueError):
-        return {
-            "ok": False,
-            "error": "ไม่สามารถโหลดเนื้อหาซูเราะฮ์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่",
-            "surah": None,
-            "ayahs": [],
-        }
+        return None
 
     blocks = {}
     for block in payload.get("data") or []:
@@ -135,21 +168,17 @@ def get_surah(number: int) -> dict:
         }
 
     thai = blocks.get(THAI_EDITION) or {}
-    audio = blocks.get(AUDIO_EDITION) or {}
     thai_ayahs = thai.get("ayahs") or []
-    audio_ayahs = audio.get("ayahs") or []
 
     ayahs = []
     for index, ayah in enumerate(arabic.get("ayahs") or []):
         translation = thai_ayahs[index].get("text", "") if index < len(thai_ayahs) else ""
-        audio_url = audio_ayahs[index].get("audio") if index < len(audio_ayahs) else None
         ayahs.append(
             {
                 "number": ayah.get("numberInSurah", index + 1),
                 # The API prefixes the first ayah with a BOM; it renders as a stray glyph.
                 "arabic": ayah.get("text", "").lstrip(BOM),
                 "thai": translation.lstrip(BOM),
-                "audio": audio_url,
             }
         )
 
@@ -167,5 +196,54 @@ def get_surah(number: int) -> dict:
         },
         "ayahs": ayahs,
     }
-    _surah_cache[number] = result
+    return result
+
+
+def _surah_from_quran_com(number: int) -> dict | None:
+    meta = next((x for x in get_surah_list()["surahs"] if x["number"] == number), None)
+    if meta is None:
+        return None
+    ayahs, page = [], 1
+    try:
+        while page:
+            response = _http.get(
+                f"{QURAN_COM_URL}/verses/by_chapter/{number}",
+                params={"translations": QURAN_COM_THAI, "fields": "text_uthmani", "per_page": 50, "page": page},
+                timeout=15.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+            for verse in data.get("verses") or []:
+                translations = verse.get("translations") or []
+                thai = _TAG.sub("", translations[0].get("text", "")) if translations else ""
+                ayahs.append({
+                    "number": verse.get("verse_number"),
+                    "arabic": verse.get("text_uthmani", ""),
+                    "thai": " ".join(thai.split()),
+                })
+            page = (data.get("pagination") or {}).get("next_page")
+    except (httpx.HTTPError, ValueError):
+        return None
+    if not ayahs:
+        return None
+    return {"ok": True, "error": None, "surah": dict(meta), "ayahs": ayahs}
+
+
+def get_surah(number: int) -> dict:
+    """One surah, Arabic + Thai translation (text only — the app plays no audio).
+
+    In-memory cache -> alquran.cloud -> api.quran.com.
+    """
+    if number in _surah_cache:
+        return _surah_cache[number]
+    result = _surah_from_alquran_cloud(number) or _surah_from_quran_com(number)
+    if not result:
+        return {
+            "ok": False,
+            "error": "ไม่สามารถโหลดเนื้อหาซูเราะฮ์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่",
+            "surah": None,
+            "ayahs": [],
+        }
+    if result.get("ok"):
+        _surah_cache[number] = result
     return result

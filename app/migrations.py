@@ -39,6 +39,7 @@ ADDED_COLUMNS = [
     ("app_mosques", "is_active", "BOOLEAN NOT NULL DEFAULT TRUE"),
     ("app_mosques", "osm_ref", "VARCHAR(40)"),
     ("mail", "gift_background_key", "VARCHAR(40)"),  # background gifts in the mailbox
+    ("prayer_notices", "answer", "VARCHAR(10)"),  # "missed" answers to the yesterday check
 ]
 
 
