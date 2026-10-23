@@ -2125,3 +2125,52 @@ a:focus-visible, button:focus-visible {
   .screen > *, .like-btn.is-liked .ico { animation: none; }
   a.row:hover, a.news-card:hover, a.post-card:hover, a.link-row:hover, a.card:hover, .mascot-card:hover { transform: none; }
 }
+
+/* ---------- ศาสนา: ดุอาอ์ / หลักศาสนา / วิธีละหมาด (content from HadeethEnc) ---------- */
+.row__title--wrap { font-weight: 500; line-height: 1.55; }
+.group-title { font-size: 15px; font-weight: 700; color: var(--green); margin: 20px 0 10px; }
+.group-title:first-child { margin-top: 2px; }
+.fold { margin-bottom: 10px; }
+.fold__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 9px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  list-style: none;
+}
+.fold__head::-webkit-details-marker { display: none; }
+.fold__title { flex: 1; font-size: 14.5px; font-weight: 600; line-height: 1.45; }
+.fold__n {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.fold[open] > .fold__head { box-shadow: 0 0 0 2px var(--green) inset, var(--shadow); }
+.source-note { margin: 14px 0 6px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+.source-note a { color: var(--green); text-decoration: underline; }
+
+.hadith { padding: 4px 16px 18px; }
+.hadith__title { margin: 6px 0 10px; font-size: 16px; font-weight: 700; line-height: 1.55; }
+.hadith__ar {
+  margin: 14px 0 10px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: "Traditional Arabic", "Amiri", "Scheherazade New", serif;
+  font-size: 24px;
+  line-height: 2.1;
+  color: var(--green);
+}
+.hadith__th { margin: 10px 0; font-size: 14.5px; line-height: 1.7; color: #46524d; }
+.hadith__src { margin: 8px 0; font-size: 12.5px; color: var(--muted); }
+.hadith__h { margin: 18px 0 4px; font-size: 14.5px; font-weight: 700; color: var(--green); }
+.hadith__hints { margin: 6px 0; padding-left: 20px; font-size: 14px; line-height: 1.65; color: #46524d; }

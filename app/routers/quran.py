@@ -9,23 +9,6 @@ from app.templating import templates
 router = APIRouter(tags=["quran"])
 
 
-@router.get("/daily-quran")
-def daily_quran(request: Request, user: User | None = Depends(get_current_user)):
-    # The ayah itself is picked and fetched in the browser (static/js/daily-quran.js) so the
-    # page can show its own loading / error state; only the Thai surah names come from here.
-    return templates.TemplateResponse(
-        request,
-        "daily_quran.html",
-        {
-            "user": user,
-            "active": "daily_quran",
-            "surah_names_th": alquran.SURAH_NAMES_TH,
-            "api_base": alquran.BASE_URL,
-            "editions": f"{alquran.ARABIC_EDITION},{alquran.THAI_EDITION}",
-        },
-    )
-
-
 @router.get("/quran")
 def surah_list(request: Request, view: str = "surah", user: User | None = Depends(get_current_user)):
     # ?view=juz lists the 30 juz instead of the 114 surahs; plain links, so back/refresh work.
