@@ -74,6 +74,22 @@ def static_url(path: str) -> str:
     return f"/static/{path}?v={stamp}"
 
 
+# App themes, picked on /profile: key -> the browser's address-bar colour. "green" (ขาว-เขียว)
+# is the default; the rest of a theme lives in static/css/style.css under html[data-theme].
+THEME_COLORS = {"green": "#1B5E3A", "gold": "#9c762b", "dark": "#143b28"}
+THEME_COOKIE = "theme"
+
+
+def theme_of(request) -> str:
+    """The visitor's theme from its cookie; anything unknown is the default."""
+    value = request.cookies.get(THEME_COOKIE)
+    return value if value in THEME_COLORS else "green"
+
+
+def theme_color_of(request) -> str:
+    return THEME_COLORS[theme_of(request)]
+
+
 templates.env.filters["thai_datetime"] = thai_datetime
 templates.env.filters["thai_day"] = thai_day
 templates.env.filters["baht"] = baht
@@ -84,6 +100,8 @@ templates.env.globals["forum_category_labels"] = FORUM_CATEGORY_LABELS
 templates.env.globals["avatar_styles"] = AVATAR_STYLES
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["static_url"] = static_url
+templates.env.globals["theme_of"] = theme_of
+templates.env.globals["theme_color_of"] = theme_color_of
 templates.env.globals["app_name"] = "ประชาชนเพื่อพี่น้องอิสลาม"
 # can(user, "news.manage") — permission checks in templates (app/permissions.py)
 templates.env.globals["can"] = can

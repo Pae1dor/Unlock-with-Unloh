@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="{{ theme_of(request) }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
-  <meta name="theme-color" content="#1B5E3A">
+  <meta name="theme-color" content="{{ theme_color_of(request) }}">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <link rel="icon" type="image/png" href="/static/img/icon-192.png">
   <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
@@ -24,7 +24,7 @@
   {% if user and request.cookies.get('welcome') %}
   {# Shown once right after logging in; static/js/ui.js fades it out. Tap to skip. #}
   <div class="welcome" id="welcome" role="status">
-    <div class="welcome__logo"><svg class="ico"><use href="#i-mosque"></use></svg></div>
+    <div class="welcome__logo"><svg class="ico"><use href="#i-logo"></use></svg></div>
     <p class="welcome__salam">อัสลามุอะลัยกุม</p>
     <p class="welcome__name">{{ user.full_name }}</p>
     <div class="welcome__bar"><span></span></div>
