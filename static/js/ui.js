@@ -137,7 +137,7 @@
 
     checkPrayerAlerts();
     setInterval(checkPrayerAlerts, 60000);
-    window.uiCheckPrayerAlerts = checkPrayerAlerts; // e.g. right after a Quran listen logs a prayer
+    window.uiCheckPrayerAlerts = checkPrayerAlerts; // e.g. right after a check-in logs a prayer
   }
 
   // Back/forward cache restores the old page with the bar still running.

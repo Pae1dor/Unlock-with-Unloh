@@ -29,8 +29,8 @@
       <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %} {% if row and row.state %}is-{{ row.state|replace('_', '-') }}{% endif %}" data-prayer-key="{{ item.key }}">
         <span class="prayer-list__name">
           {% if row %}
-          {# Prayer log circle — status only: ticked by listening to the Quran in that prayer's
-             time (static/js/quran-player.js) or by a mosque check-in. #}
+          {# Prayer log circle — status only: ticked by a mosque check-in. (Rows made by the old
+             listen-to-the-Quran tick keep their book icon.) #}
           {% set entry = row.log %}
           <span class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source in ('checkin', 'quran') %} is-{{ entry.source }}{% endif %}{% endif %}"
                 data-prayer="{{ item.key|lower }}" data-starts="{{ row.starts_ms }}" role="img"
@@ -51,12 +51,6 @@
   <p class="map-note" style="padding-left:0">ระบบเวลาละหมาดหลักขัดข้องชั่วคราว เวลานี้คำนวณจากพิกัดจังหวัด อาจต่างจากประกาศของมัสยิดเล็กน้อย</p>
   {% endif %}
 </div>
-{% if log %}
-<a class="pl-hint" href="/quran">
-  <svg class="ico"><use href="#i-book"></use></svg>
-  <span>ฟังอัลกุรอานในช่วงเวลาละหมาด ระบบจะติ๊กเวลานั้นให้อัตโนมัติ</span>
-</a>
-{% endif %}
 {% else %}
 <div class="notice notice--error">{{ prayer.error }}</div>
 {% endif %}

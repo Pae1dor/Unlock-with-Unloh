@@ -151,59 +151,6 @@ def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog
     return row
 
 
-def current_prayer(city: str, now: datetime) -> tuple[date, str] | None:
-    """(day, prayer) whose on-time window contains `now`, or None (e.g. sunrise -> Dhuhr).
-
-    Before today's Fajr it is still the previous day's Isha.
-    """
-    day = now.date()
-    starts = start_times(city, day)
-    if starts is None:
-        return None
-    if now < starts["fajr"]:
-        return day - timedelta(days=1), "isha"
-    for prayer in reversed(PRAYER_KEYS):
-        if now >= starts[prayer]:
-            end = end_time(city, day, prayer)
-            if end is not None and now >= end:
-                return None
-            return day, prayer
-    return None
-
-
-def log_listen(db: Session, user: User, now: datetime) -> tuple[PrayerLog, bool] | None:
-    """Listening to the Quran during a prayer's time ticks that prayer (source "quran").
-
-    Returns (row, created) or None when no prayer's time is running. Never touches a row
-    that already exists (manual, check-in or an earlier listen).
-    """
-    current = current_prayer(user.city, now)
-    if current is None:
-        return None
-    day, prayer = current
-    existing = logs_for_day(db, user.id, day).get(prayer)
-    if existing is not None:
-        return existing, False
-
-    row = PrayerLog(
-        user_id=user.id,
-        date=day,
-        prayer=prayer,
-        logged_at=_utc(now),
-        status="on_time",  # inside the window by definition
-        source="quran",
-        in_congregation=False,
-    )
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        return logs_for_day(db, user.id, day)[prayer], False
-    db.refresh(row)
-    return row, True
-
-
 DUE_SOON_MINUTES = 30
 
 

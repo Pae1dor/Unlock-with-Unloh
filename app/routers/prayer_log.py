@@ -55,42 +55,6 @@ def log_prayer(
     return _out(row, len(rules.logs_for_day(db, user.id, now.date())))
 
 
-@router.post("/api/prayer-log/listen")
-def log_from_listening(
-    user: User | None = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Called by the Quran player after a short listen: ticks whichever prayer's time is now."""
-    user = _owner(user)
-    now = rules.now_local()
-    result = rules.log_listen(db, user, now)
-    if result is None:
-        return {"logged": False}
-    row, created = result
-    return {
-        "logged": True,
-        "created": created,
-        "label": rules.LABELS[row.prayer],
-        **_out(row, len(rules.logs_for_day(db, user.id, row.date))),
-    }
-
-
-@router.delete("/api/prayer-log/{prayer}")
-def undo_prayer(
-    prayer: str,
-    user: User | None = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """The toast's ยกเลิก: removes today's manual log of that prayer."""
-    user = _owner(user)
-    if prayer not in rules.PRAYER_KEYS:
-        raise _fail(404, "unknown_prayer", "ไม่พบเวลาละหมาดนี้")
-    today = rules.now_local().date()
-    if not rules.undo_manual(db, user, prayer, today):
-        raise _fail(409, "cannot_undo", "ยกเลิกรายการนี้ไม่ได้")
-    return {"prayer": prayer, "today_count": len(rules.logs_for_day(db, user.id, today))}
-
-
 @router.get("/api/prayer-log/week")
 def prayer_week(
     start: date | None = Query(None, description="any day of the week to show; defaults to this week"),

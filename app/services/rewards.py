@@ -1,7 +1,7 @@
 """Outfit rewards: earn outfits from the prayer log (catalog: app/outfits.py, "unlock").
 
 five_prayers — all five prayers logged on the same day, any day, from any source
-(listening to the Quran, a mosque check-in, ...).
+(a mosque check-in, ...; older logs also hold Quran-listening ticks).
 """
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
