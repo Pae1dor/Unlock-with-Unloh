@@ -73,7 +73,7 @@ def week_for(db: Session, user: User, start: date, now) -> dict:
     missed_today = [p for p, s in rules.day_states(db, user, now).items() if s["state"] == "missed"]
     return rules.week_summary(db, user.id, start, now.date(),
                               missed_today=missed_today, since=rules._tracking_since(user),
-                              window=rules.open_window(user.city, now))
+                              windows=rules.open_prayers(user.city, now))
 
 
 @router.get("/api/prayer-log/alerts")
