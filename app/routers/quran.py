@@ -1,4 +1,4 @@
-"""อัลกุรอาน — surah list, per-surah reader and the ayah of the day."""
+"""อัลกุรอาน — surah / juz lists, per-surah and per-juz readers and the ayah of the day."""
 from fastapi import APIRouter, Depends, Request
 
 from app.deps import get_current_user
@@ -27,7 +27,14 @@ def daily_quran(request: Request, user: User | None = Depends(get_current_user))
 
 
 @router.get("/quran")
-def surah_list(request: Request, user: User | None = Depends(get_current_user)):
+def surah_list(request: Request, view: str = "surah", user: User | None = Depends(get_current_user)):
+    # ?view=juz lists the 30 juz instead of the 114 surahs; plain links, so back/refresh work.
+    if view == "juz":
+        return templates.TemplateResponse(
+            request,
+            "quran_list.html",
+            {"user": user, "active": "home", "view": "juz", "juz_list": alquran.juz_list(), "surahs": [], "error": None},
+        )
     result = alquran.get_surah_list()
     return templates.TemplateResponse(
         request,
@@ -35,8 +42,41 @@ def surah_list(request: Request, user: User | None = Depends(get_current_user)):
         {
             "user": user,
             "active": "home",
+            "view": "surah",
+            "juz_list": [],
             "surahs": result["surahs"],
             "error": result["error"],
+        },
+    )
+
+
+@router.get("/quran/juz/{juz_number}")
+def juz_detail(request: Request, juz_number: int, user: User | None = Depends(get_current_user)):
+    if juz_number < 1 or juz_number > alquran.JUZ_COUNT:
+        return templates.TemplateResponse(
+            request,
+            "error.html",
+            {
+                "user": user,
+                "active": "home",
+                "title": "อัลกุรอาน",
+                "message": f"หมายเลขญุซต้องอยู่ระหว่าง 1 ถึง {alquran.JUZ_COUNT}",
+            },
+            status_code=404,
+        )
+
+    result = alquran.get_juz(juz_number)
+    return templates.TemplateResponse(
+        request,
+        "quran_juz.html",
+        {
+            "user": user,
+            "active": "home",
+            "juz": result["juz"],
+            "sections": result["sections"],
+            "error": result["error"],
+            "juz_number": juz_number,
+            "juz_count": alquran.JUZ_COUNT,
         },
     )
 

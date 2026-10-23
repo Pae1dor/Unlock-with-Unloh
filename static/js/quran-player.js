@@ -42,7 +42,9 @@
     if (current >= 0) {
       var el = ayahs[current];
       el.classList.add('is-playing');
-      if (barAyah) barAyah.textContent = 'อายะฮ์ ' + el.querySelector('.ayah__num').textContent + ' / ' + ayahs.length;
+      // A juz page runs through several surahs, so its ayahs carry their own label.
+      if (barAyah) barAyah.textContent = el.getAttribute('data-label') ||
+        ('อายะฮ์ ' + el.querySelector('.ayah__num').textContent + ' / ' + ayahs.length);
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
