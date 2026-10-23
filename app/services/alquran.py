@@ -6,9 +6,11 @@ is the only Thai translation the API exposes):
   * th.thai        — Thai translation (King Fahad Quran Complex)
   * ar.alafasy     — per-ayah audio (Mishary Alafasy), gives an .mp3 url per verse
 
-The 114-entry surah list and each fetched surah are cached in-process.
+The 114-entry surah list and each fetched surah or juz are cached in-process.
 """
 from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 
@@ -50,6 +52,25 @@ BOM = "\ufeff"  # zero-width no-break space the API prefixes to the first ayah
 
 _surah_list_cache: list[dict] | None = None
 _surah_cache: dict[int, dict] = {}
+_juz_cache: dict[int, dict] = {}
+
+# Where each of the 30 juz begins, as (surah, ayah). Fixed by the Madinah mushaf, so it is
+# kept here and the list page needs no request; checked against GET /v1/juz/{n}/quran-uthmani
+# (the 30 juz add up to the 6,236 ayahs).
+JUZ_STARTS = [
+    (1, 1), (2, 142), (2, 253), (3, 93), (4, 24), (4, 148), (5, 82), (6, 111), (7, 88), (8, 41),
+    (9, 93), (11, 6), (12, 53), (15, 1), (17, 1), (18, 75), (21, 1), (23, 1), (25, 21), (27, 56),
+    (29, 46), (33, 31), (36, 28), (39, 32), (41, 47), (46, 1), (51, 31), (58, 1), (67, 1), (78, 1),
+]
+JUZ_COUNT = len(JUZ_STARTS)
+
+
+def juz_list() -> list[dict]:
+    """The 30 juz with where each begins: [{number, surah, surah_name_th, ayah}]."""
+    return [
+        {"number": index + 1, "surah": surah, "surah_name_th": thai_name(surah), "ayah": ayah}
+        for index, (surah, ayah) in enumerate(JUZ_STARTS)
+    ]
 
 
 def thai_name(number: int) -> str:
@@ -168,4 +189,104 @@ def get_surah(number: int) -> dict:
         "ayahs": ayahs,
     }
     _surah_cache[number] = result
+    return result
+
+
+def _letters(text: str) -> str:
+    """Just the Arabic letters (alif wasla included): no marks, spaces or digits."""
+    return "".join(ch for ch in text if "ء" <= ch <= "ي" or ch == "ٱ")
+
+
+_BISMILLAH_LETTERS = _letters("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ")
+
+
+def _without_bismillah(text: str) -> str:
+    """The API puts the basmala in front of the first ayah of most surahs; the reader shows
+    it as its own line, so it is cut here. Al-Fatihah's first ayah *is* the basmala: the
+    caller leaves that one alone."""
+    words = text.split()
+    if len(words) > 4 and _letters(" ".join(words[:4])) == _BISMILLAH_LETTERS:
+        return " ".join(words[4:])
+    return text
+
+
+def _fetch_juz_edition(number: int, edition: str) -> list[dict]:
+    response = httpx.get(f"{BASE_URL}/juz/{number}/{edition}", timeout=25.0, follow_redirects=True)
+    response.raise_for_status()
+    return (response.json().get("data") or {}).get("ayahs") or []
+
+
+def get_juz(number: int) -> dict:
+    """One juz as sections, one per surah it runs through, each with its ayahs.
+
+    The API has no multi-edition endpoint for juz (unlike surah), so Arabic, Thai and audio
+    are three requests, made together.
+    """
+    if number in _juz_cache:
+        return _juz_cache[number]
+
+    failure = {
+        "ok": False,
+        "error": "ไม่สามารถโหลดเนื้อหาญุซได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่",
+        "juz": None,
+        "sections": [],
+    }
+    editions = (ARABIC_EDITION, THAI_EDITION, AUDIO_EDITION)
+    try:
+        with ThreadPoolExecutor(max_workers=len(editions)) as pool:
+            arabic, thai, audio = list(pool.map(lambda edition: _fetch_juz_edition(number, edition), editions))
+    except (httpx.HTTPError, ValueError):
+        return failure
+    if not arabic:
+        return failure
+
+    thai_by_number = {a.get("number"): a.get("text", "") for a in thai}
+    audio_by_number = {a.get("number"): a.get("audio") for a in audio}
+
+    sections: list[dict] = []
+    for ayah in arabic:
+        surah = ayah.get("surah") or {}
+        surah_number = surah.get("number")
+        if not sections or sections[-1]["surah"]["number"] != surah_number:
+            sections.append(
+                {
+                    "surah": {
+                        "number": surah_number,
+                        "name_th": thai_name(surah_number),
+                        "name_ar": surah.get("name", ""),
+                        "name_en": surah.get("englishName", ""),
+                        "ayah_count": surah.get("numberOfAyahs", 0),
+                        "revelation_th": REVELATION_TH.get(surah.get("revelationType", ""), ""),
+                    },
+                    "ayahs": [],
+                }
+            )
+        in_surah = ayah.get("numberInSurah")
+        text = ayah.get("text", "").lstrip(BOM)
+        if in_surah == 1 and surah_number != 1:
+            text = _without_bismillah(text)
+        sections[-1]["ayahs"].append(
+            {
+                "number": in_surah,
+                "arabic": text,
+                "thai": thai_by_number.get(ayah.get("number"), "").lstrip(BOM),
+                "audio": audio_by_number.get(ayah.get("number")),
+                "surah_name_th": thai_name(surah_number),
+            }
+        )
+
+    first = sections[0]
+    result = {
+        "ok": True,
+        "error": None,
+        "juz": {
+            "number": number,
+            "ayah_count": len(arabic),
+            "start_surah": first["surah"]["number"],
+            "start_surah_name_th": first["surah"]["name_th"],
+            "start_ayah": first["ayahs"][0]["number"],
+        },
+        "sections": sections,
+    }
+    _juz_cache[number] = result
     return result

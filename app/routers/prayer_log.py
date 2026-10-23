@@ -45,50 +45,16 @@ def log_prayer(
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Mark one of today's prayers as prayed; on time / qada is decided here, not by the client."""
+    """Mark a prayer as prayed, while its time is open; the server decides, not the client."""
     user = _owner(user)
     now = rules.now_local()
     try:
         row = rules.log_manual(db, user, body.prayer, now)
     except rules.NotYet:
         raise _fail(409, "not_yet", f"ยังไม่เข้าเวลา{rules.LABELS[body.prayer]}") from None
-    return _out(row, len(rules.logs_for_day(db, user.id, now.date())))
-
-
-@router.post("/api/prayer-log/listen")
-def log_from_listening(
-    user: User | None = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Called by the Quran player after a short listen: ticks whichever prayer's time is now."""
-    user = _owner(user)
-    now = rules.now_local()
-    result = rules.log_listen(db, user, now)
-    if result is None:
-        return {"logged": False}
-    row, created = result
-    return {
-        "logged": True,
-        "created": created,
-        "label": rules.LABELS[row.prayer],
-        **_out(row, len(rules.logs_for_day(db, user.id, row.date))),
-    }
-
-
-@router.delete("/api/prayer-log/{prayer}")
-def undo_prayer(
-    prayer: str,
-    user: User | None = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """The toast's ยกเลิก: removes today's manual log of that prayer."""
-    user = _owner(user)
-    if prayer not in rules.PRAYER_KEYS:
-        raise _fail(404, "unknown_prayer", "ไม่พบเวลาละหมาดนี้")
-    today = rules.now_local().date()
-    if not rules.undo_manual(db, user, prayer, today):
-        raise _fail(409, "cannot_undo", "ยกเลิกรายการนี้ไม่ได้")
-    return {"prayer": prayer, "today_count": len(rules.logs_for_day(db, user.id, today))}
+    except rules.Closed:
+        raise _fail(409, "closed", f"หมดเวลา{rules.LABELS[body.prayer]}แล้ว หรือยังไม่ถึงเวลาที่บันทึกได้") from None
+    return _out(row, len(rules.logs_for_day(db, user.id, row.date)))
 
 
 @router.get("/api/prayer-log/week")
@@ -106,7 +72,8 @@ def week_for(db: Session, user: User, start: date, now) -> dict:
     """Weekly grid incl. which slots were missed; shared with the profile page."""
     missed_today = [p for p, s in rules.day_states(db, user, now).items() if s["state"] == "missed"]
     return rules.week_summary(db, user.id, start, now.date(),
-                              missed_today=missed_today, since=rules._tracking_since(user))
+                              missed_today=missed_today, since=rules._tracking_since(user),
+                              windows=rules.open_prayers(user.city, now))
 
 
 @router.get("/api/prayer-log/alerts")

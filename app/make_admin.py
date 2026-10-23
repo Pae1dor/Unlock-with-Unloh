@@ -2,7 +2,7 @@
 
 The first admin is set up this way; after that admins can also be managed at /admin.
 The user must already have an account (register first). Revoking the last admin is refused.
-
+กหฟกฟหกฟหกฟหกฟก
 Run with:  python -m app.make_admin someone@example.com
            python -m app.make_admin --revoke someone@example.com
 """

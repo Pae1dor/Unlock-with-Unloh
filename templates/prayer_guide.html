@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_hadith_macros.html" import rows, source_note %}
+{% block title %}วิธีละหมาด — {{ app_name }}{% endblock %}
+{% block page_title %}วิธีละหมาด{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="notice notice--error">{{ error }}</div>
+{% else %}
+<div class="notice">
+  รวบรวมหะดีษเกี่ยวกับการละหมาดเรียงตามหัวข้อ ไม่ใช่คู่มือตามสำนัก (มัซฮับ) ใดสำนักหนึ่ง
+  รายละเอียดการปฏิบัติอาจต่างกันตามสำนัก ควรสอบถามผู้รู้
+</div>
+<div class="section">
+  {% for g in groups %}
+  <details class="fold"{% if loop.first %} open{% endif %}>
+    <summary class="fold__head">
+      <span class="fold__title">{{ g.category.title }}</span>
+      <span class="fold__n">{{ g.hadiths|length }}</span>
+    </summary>
+    {{ rows(g.hadiths, back_to) }}
+  </details>
+  {% endfor %}
+  {{ source_note() }}
+</div>
+{% endif %}
+{% endblock %}

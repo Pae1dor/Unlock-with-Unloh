@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_hadith_macros.html" import source_note %}
+{% block title %}หะดีษ — {{ app_name }}{% endblock %}
+{% block page_title %}หะดีษ{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="notice notice--error">{{ error }}</div>
+{% else %}
+<article class="hadith">
+  <h2 class="hadith__title">{{ hadith.title }}</h2>
+  {% if hadith.grade %}<span class="badge">ระดับ: {{ hadith.grade }}</span>{% endif %}
+
+  <p class="hadith__ar" lang="ar" dir="rtl">{{ hadith.arabic }}</p>
+  <p class="hadith__th">{{ hadith.thai }}</p>
+  {% if hadith.attribution %}<p class="hadith__src">{{ hadith.attribution }}</p>{% endif %}
+
+  {% if hadith.explanation %}
+  <h3 class="hadith__h">คำอธิบาย</h3>
+  <p class="hadith__th">{{ hadith.explanation }}</p>
+  {% endif %}
+
+  {% if hadith.hints %}
+  <h3 class="hadith__h">ข้อคิดจากหะดีษ</h3>
+  <ul class="hadith__hints">
+    {% for hint in hadith.hints %}<li>{{ hint }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <p class="source-note">
+    ดูหะดีษนี้ที่ต้นทาง:
+    <a href="{{ hadith.source_url }}" target="_blank" rel="noopener noreferrer">HadeethEnc.com</a>
+  </p>
+  {{ source_note() }}
+</article>
+{% endif %}
+{% endblock %}

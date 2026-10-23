@@ -37,7 +37,7 @@ def profile(
             "post_count": post_count,
             "donation_count": donation_count,
             "saved": request.query_params.get("saved") == "1",
-            # weekly prayer grid (read-only); the arrows fetch other weeks from /api/prayer-log/week
+            # weekly prayer grid (an open prayer can be ticked there); the arrows fetch other weeks from /api/prayer-log/week
             "prayer_week": week_for(db, user, today, prayer_log.now_local()),
             # None hides the admin icon; a number is the badge (things waiting for review)
             "admin_pending": admin_queue.pending_counts(db)["total"] if can(user, "admin.panel") else None,

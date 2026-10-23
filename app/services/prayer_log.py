@@ -119,13 +119,49 @@ class NotYet(Exception):
     """The prayer's time has not begun yet."""
 
 
+class Closed(Exception):
+    """The prayer is outside the time it can be ticked in."""
+
+
+# A prayer can be ticked from GRACE before its time begins until GRACE after it ends, so a
+# phone or mosque clock a few minutes off never blocks it. Neighbouring prayers' windows
+# overlap by 2 x GRACE, and then either can be ticked. A tick inside the grace counts as on time.
+GRACE = timedelta(minutes=15)
+
+
+def open_prayers(city: str, now: datetime) -> list[tuple[date, str]]:
+    """Every (day, prayer) that can be ticked at `now`, oldest first: its time, plus GRACE on
+    both sides. Isha's runs past midnight until Fajr, so early on a day it is the previous day's."""
+    out: list[tuple[date, str]] = []
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+    for day, prayers in ((yesterday, ("isha",)), (today, tuple(PRAYER_KEYS))):
+        starts = start_times(city, day)
+        if starts is None:
+            continue
+        for prayer in prayers:
+            end = end_time(city, day, prayer)
+            if end is not None and starts[prayer] - GRACE <= now < end + GRACE:
+                out.append((day, prayer))
+    return out
+
+
 def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog:
-    """Mark today's `prayer` as prayed. Tapping again returns the existing record."""
+    """Mark `prayer` as prayed, only while it can be ticked (open_prayers). Tapping again
+    returns the existing record."""
     now = now.astimezone(ZoneInfo(TIMEZONE))   # "today" is the Bangkok calendar day
-    day = now.date()
-    starts = start_times(user.city, day)
-    if starts is not None and now < starts[prayer]:
-        raise NotYet()
+    starts = start_times(user.city, now.date())
+    if starts is None:
+        # times unavailable (unknown city and Aladhan down): don't refuse on a guess
+        day = now.date()
+    else:
+        match = [d for d, p in open_prayers(user.city, now) if p == prayer]
+        if match:
+            day = match[0]
+        elif now < starts[prayer] - GRACE:
+            raise NotYet()
+        else:
+            raise Closed()
 
     existing = logs_for_day(db, user.id, day).get(prayer)
     if existing is not None:
@@ -136,7 +172,7 @@ def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog
         date=day,
         prayer=prayer,
         logged_at=_utc(now),
-        status=status_for(user.city, day, prayer, now),
+        status="on_time",   # inside the window or its grace; see GRACE
         source="manual",
         in_congregation=False,
     )
@@ -149,59 +185,6 @@ def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog
         return logs_for_day(db, user.id, day)[prayer]
     db.refresh(row)
     return row
-
-
-def current_prayer(city: str, now: datetime) -> tuple[date, str] | None:
-    """(day, prayer) whose on-time window contains `now`, or None (e.g. sunrise -> Dhuhr).
-
-    Before today's Fajr it is still the previous day's Isha.
-    """
-    day = now.date()
-    starts = start_times(city, day)
-    if starts is None:
-        return None
-    if now < starts["fajr"]:
-        return day - timedelta(days=1), "isha"
-    for prayer in reversed(PRAYER_KEYS):
-        if now >= starts[prayer]:
-            end = end_time(city, day, prayer)
-            if end is not None and now >= end:
-                return None
-            return day, prayer
-    return None
-
-
-def log_listen(db: Session, user: User, now: datetime) -> tuple[PrayerLog, bool] | None:
-    """Listening to the Quran during a prayer's time ticks that prayer (source "quran").
-
-    Returns (row, created) or None when no prayer's time is running. Never touches a row
-    that already exists (manual, check-in or an earlier listen).
-    """
-    current = current_prayer(user.city, now)
-    if current is None:
-        return None
-    day, prayer = current
-    existing = logs_for_day(db, user.id, day).get(prayer)
-    if existing is not None:
-        return existing, False
-
-    row = PrayerLog(
-        user_id=user.id,
-        date=day,
-        prayer=prayer,
-        logged_at=_utc(now),
-        status="on_time",  # inside the window by definition
-        source="quran",
-        in_congregation=False,
-    )
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        return logs_for_day(db, user.id, day)[prayer], False
-    db.refresh(row)
-    return row, True
 
 
 DUE_SOON_MINUTES = 30
@@ -237,9 +220,9 @@ def day_states(db: Session, user: User, now: datetime) -> dict[str, dict]:
         # no end time, or its time was already over before the account existed
         if end is None or end <= joined:
             continue
-        if now >= end:
-            out[prayer] = {"state": "missed"}
-        elif end - now <= timedelta(minutes=DUE_SOON_MINUTES):
+        if now >= end + GRACE:
+            out[prayer] = {"state": "missed"}   # nothing left to tick: not before the grace is over
+        elif now < end and end - now <= timedelta(minutes=DUE_SOON_MINUTES):
             out[prayer] = {"state": "due_soon", "minutes_left": max(1, int((end - now).total_seconds() // 60))}
     return out
 
@@ -253,7 +236,7 @@ def missed_since(db: Session, user: User, now: datetime) -> list[tuple[date, str
     if (
         yesterday >= _tracking_since(user)
         and starts is not None
-        and now >= starts["fajr"]
+        and now >= starts["fajr"] + GRACE
         and "isha" not in logs_for_day(db, user.id, yesterday)
     ):
         missed.append((yesterday, "isha"))
@@ -361,8 +344,13 @@ def _short_date(d: date) -> str:
 
 
 def week_summary(db: Session, user_id: int, start: date, today: date,
-                 missed_today: list[str] | None = None, since: date | None = None) -> dict:
-    """Grid data for the profile card: 7 days (Mon-Sun) x 5 prayers, plus totals."""
+                 missed_today: list[str] | None = None, since: date | None = None,
+                 windows: list[tuple[date, str]] | None = None) -> dict:
+    """Grid data for the profile card: 7 days (Mon-Sun) x 5 prayers, plus totals.
+
+    `windows` is open_prayers(): a day's prayers in it that are not logged yet come back in
+    the day's "open" list (they can be ticked now) and are never in its "missed" list.
+    """
     start = week_start(start)
     current = week_start(today)
     if start > current:
@@ -407,7 +395,10 @@ def week_summary(db: Session, user_id: int, start: date, today: date,
             missed = [p for p in (missed_today or []) if cells[p] is None]
         else:
             missed = []
+        opened = [p for wd, p in (windows or []) if wd == d and cells[p] is None]
+        missed = [p for p in missed if p not in opened]
         days.append({
+            "open": opened,
             "missed": missed,
             "date": d.isoformat(),
             "weekday": THAI_WEEKDAYS_SHORT[i],

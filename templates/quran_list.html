@@ -3,7 +3,24 @@
 {% block page_title %}อัลกุรอาน{% endblock %}
 
 {% block content %}
-{% if error %}
+<div class="tabs" role="tablist" aria-label="แบ่งตาม">
+  <a class="chip {% if view != 'juz' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if view != 'juz' else 'false' }}" href="/quran">ซูเราะฮ์</a>
+  <a class="chip {% if view == 'juz' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if view == 'juz' else 'false' }}" href="/quran?view=juz">ญุซ</a>
+</div>
+
+{% if view == 'juz' %}
+<div class="section">
+  {% for j in juz_list %}
+  <a class="row" href="/quran/juz/{{ j.number }}">
+    <span class="row__num">{{ j.number }}</span>
+    <span class="row__body">
+      <span class="row__title">ญุซที่ {{ j.number }}</span>
+      <span class="row__sub">เริ่มที่ซูเราะฮ์{{ j.surah_name_th }} อายะฮ์ที่ {{ j.ayah }}</span>
+    </span>
+  </a>
+  {% endfor %}
+</div>
+{% elif error %}
 <div class="notice notice--error">{{ error }}</div>
 {% else %}
 <div class="searchbox">

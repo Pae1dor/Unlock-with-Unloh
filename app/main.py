@@ -25,6 +25,7 @@ from app.routers import (
     prayer_log,
     profile,
     quran,
+    religion,
     reports,
     ummah,
 )
@@ -103,6 +104,7 @@ app.include_router(home.router)
 app.include_router(prayer.router)
 app.include_router(prayer_log.router)
 app.include_router(quran.router)
+app.include_router(religion.router)
 app.include_router(donation.router)
 app.include_router(mosques.router)
 app.include_router(checkins.router)

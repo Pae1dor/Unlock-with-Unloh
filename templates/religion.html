@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_hadith_macros.html" import rows, source_note %}
+{% block title %}ศาสนา — {{ app_name }}{% endblock %}
+
+{% block head %}
+{% if view == 'daily' %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+{% endif %}
+{% endblock %}
+
+{% block header %}
+<header class="topbar">
+  <a class="topbar__btn" href="/" aria-label="ย้อนกลับ">
+    <svg class="ico"><use href="#i-back"></use></svg>
+  </a>
+  {# Plain links: each view is its own page, so back / refresh stay on the view you were reading. #}
+  <div class="topbar__switch topbar__switch--3" role="tablist" aria-label="ศาสนา">
+    {% for key, label in [('daily', 'ประจำวัน'), ('dua', 'ดุอาอ์'), ('faith', 'หลักศาสนา')] %}
+    <a class="switch__btn {% if view == key %}is-active{% endif %}" role="tab"
+       aria-selected="{{ 'true' if view == key else 'false' }}"
+       href="/religion?view={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <a class="topbar__btn" href="{% if user %}/notifications{% else %}/login?next=/notifications{% endif %}" aria-label="การแจ้งเตือน">
+    <svg class="ico"><use href="#i-bell"></use></svg>
+  </a>
+</header>
+{% endblock %}
+
+{% block content %}
+{% if view == 'daily' %}
+{% include "_religion_daily.html" %}
+
+{% elif error %}
+<div class="notice notice--error">{{ error }}</div>
+
+{% elif view == 'dua' %}
+<div class="section">
+  {% for g in groups %}
+  <details class="fold"{% if loop.first %} open{% endif %}>
+    <summary class="fold__head">
+      <span class="fold__title">{{ g.category.title }}</span>
+      <span class="fold__n">{{ g.hadiths|length }}</span>
+    </summary>
+    {{ rows(g.hadiths, '/religion?view=dua') }}
+  </details>
+  {% endfor %}
+  {{ source_note() }}
+</div>
+
+{% else %}
+<div class="section">
+  <h2 class="group-title">หลักปฏิบัติ 5 ประการ</h2>
+  {{ rows(pillars, '/religion?view=faith') }}
+
+  <h2 class="group-title">หลักศรัทธา 6 ประการ</h2>
+  {% for c in faith %}
+  <a class="row" href="/religion/category/{{ c.id }}">
+    <span class="row__num">{{ loop.index }}</span>
+    <span class="row__body">
+      <span class="row__title">{{ c.title }}</span>
+      <span class="row__sub">{{ c.count }} รายการ</span>
+    </span>
+  </a>
+  {% endfor %}
+  {{ source_note() }}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if view == 'daily' %}
+<script src="{{ static_url('js/daily-quran.js') }}"></script>
+{% endif %}
+{% endblock %}

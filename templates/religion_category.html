@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_hadith_macros.html" import rows, source_note %}
+{% block title %}{{ category.title if category else 'ศาสนา' }} — {{ app_name }}{% endblock %}
+{% block page_title %}หลักศรัทธา{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="notice notice--error">{{ error }}</div>
+{% else %}
+<div class="section">
+  <h2 class="group-title">{{ category.title }}</h2>
+  {{ rows(hadiths, back_to) }}
+  {{ source_note() }}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,12 +1,3 @@
-{% extends "base.html" %}
-{% block title %}อัลกุรอานประจำวัน — {{ app_name }}{% endblock %}
-{% block page_title %}อัลกุรอานประจำวัน{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
-{% endblock %}
-
-{% block content %}
 <div class="daily" id="daily-quran"
      data-api="{{ api_base }}" data-editions="{{ editions }}"
      data-names="{{ surah_names_th|tojson|forceescape }}">
@@ -30,8 +21,3 @@
     <a class="daily__link" id="daily-link" href="/quran">อ่านทั้งซูเราะฮ์</a>
   </article>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ static_url('js/daily-quran.js') }}"></script>
-{% endblock %}

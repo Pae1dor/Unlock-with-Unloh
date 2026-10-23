@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% set back_url = "/quran?view=juz" %}
+{% block title %}ญุซที่ {{ juz_number }} — {{ app_name }}{% endblock %}
+{% block page_title %}ญุซที่ {{ juz_number }}{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="notice notice--error">{{ error }}</div>
+{% else %}
+<div class="surah-head">
+  <div class="surah-head__th">ญุซที่ {{ juz.number }}</div>
+  <div class="surah-head__meta">เริ่มที่ซูเราะฮ์{{ juz.start_surah_name_th }} อายะฮ์ที่ {{ juz.start_ayah }}</div>
+  <div class="surah-head__meta">{{ juz.ayah_count }} อายะฮ์</div>
+</div>
+
+<div class="section" id="ayah-list">
+  {% for section in sections %}
+  {% set surah = section.surah %}
+  {% set is_start = section.ayahs[0].number == 1 %}
+  {% if is_start %}
+  <div class="surah-head surah-head--section">
+    <div class="surah-head__ar">{{ surah.name_ar }}</div>
+    <div class="surah-head__th">{{ surah.number }}. {{ surah.name_th }}</div>
+    <div class="surah-head__meta">{{ surah.ayah_count }} อายะฮ์ · {{ surah.revelation_th }}</div>
+  </div>
+  {% if surah.number not in [1, 9] %}
+  <div class="bismillah">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+  {% endif %}
+  {% endif %}
+  {% for ayah in section.ayahs %}
+  <article class="ayah" data-audio="{{ ayah.audio or '' }}"
+           data-label="ซูเราะฮ์{{ ayah.surah_name_th }} อายะฮ์ที่ {{ ayah.number }}">
+    <div class="ayah__head">
+      <span class="ayah__num">{{ ayah.number }}</span>
+      {% if not is_start and loop.first %}<span class="ayah__ref">ซูเราะฮ์{{ surah.name_th }} (ต่อ)</span>{% endif %}
+    </div>
+    <div class="ayah__ar">{{ ayah.arabic }}</div>
+    {% if ayah.thai %}<div class="ayah__th">{{ ayah.thai }}</div>{% endif %}
+  </article>
+  {% endfor %}
+  {% endfor %}
+</div>
+
+<nav class="juz-nav" aria-label="ญุซก่อนหน้า/ถัดไป">
+  <a class="btn btn--ghost {% if juz_number <= 1 %}is-off{% endif %}" href="/quran/juz/{{ juz_number - 1 }}">&lsaquo; ญุซที่ {{ juz_number - 1 }}</a>
+  <a class="btn btn--ghost {% if juz_number >= juz_count %}is-off{% endif %}" href="/quran/juz/{{ juz_number + 1 }}">ญุซที่ {{ juz_number + 1 }} &rsaquo;</a>
+</nav>
+
+<div class="audio-bar" id="audio-bar" hidden>
+  <button class="audio-bar__btn" id="audio-bar-toggle" type="button" aria-label="เล่น/หยุด">
+    <svg class="ico" id="audio-bar-icon"><use href="#i-play"></use></svg>
+  </button>
+  <div class="audio-bar__info">
+    <div class="audio-bar__ayah" id="audio-bar-ayah">ญุซที่ {{ juz.number }}</div>
+    <div class="audio-bar__track"><div class="audio-bar__fill" id="audio-bar-fill"></div></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% if not error %}
+{% block center_tab %}
+<div class="tab tab--center">
+  <button class="tab__fab tab__fab--audio" id="fab-play-toggle" type="button" aria-label="เล่น/หยุดฟังทั้งญุซ">
+    <svg class="fab-progress" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="3"/>
+      <circle id="fab-progress-ring" cx="32" cy="32" r="30" fill="none" stroke="#fff" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5" transform="rotate(-90 32 32)"/>
+    </svg>
+    <svg class="ico" id="fab-play-icon"><use href="#i-play"></use></svg>
+  </button>
+</div>
+{% endblock %}
+{% endif %}
+
+{% block scripts %}
+<script src="{{ static_url('js/quran-player.js') }}"></script>
+{% endblock %}

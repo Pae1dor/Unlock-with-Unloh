@@ -1,0 +1,17 @@
+{# Rows of hadith titles (each opens /hadith/{id}, coming back to `back`) and the source line
+   every page with content from HadeethEnc ends with. #}
+{% macro rows(hadiths, back) %}
+{% for h in hadiths %}
+<a class="row" href="/hadith/{{ h.id }}?back={{ back|urlencode }}">
+  <span class="row__body"><span class="row__title row__title--wrap">{{ h.title }}</span></span>
+</a>
+{% endfor %}
+{% endmacro %}
+
+{% macro source_note() %}
+<p class="source-note">
+  เนื้อหาจาก <a href="https://hadeethenc.com/th" target="_blank" rel="noopener noreferrer">HadeethEnc.com</a>
+  (IslamHouse) แสดงพร้อมต้นฉบับอาหรับ แหล่งที่มา และระดับของหะดีษ
+  ยังไม่ผ่านการตรวจจากผู้รู้ของแอป
+</p>
+{% endmacro %}
