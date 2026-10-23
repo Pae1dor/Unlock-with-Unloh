@@ -1,5 +1,5 @@
-// Prayer log circles on /prayer-times are status only: a prayer is ticked by a mosque
-// check-in. This just keeps the rows' locked/unlocked look current while the page is open.
+// Prayer log circles on /prayer-times are status only: a prayer is ticked on the /profile
+// grid or by a mosque check-in. This just keeps the rows' locked/unlocked look current while the page is open.
 (function () {
   var dots = Array.prototype.slice.call(document.querySelectorAll('.pl-dot[data-prayer]'));
   if (!dots.length) return;

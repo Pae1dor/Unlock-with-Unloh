@@ -45,14 +45,16 @@ def log_prayer(
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Mark one of today's prayers as prayed; on time / qada is decided here, not by the client."""
+    """Mark a prayer as prayed, while its time is open; the server decides, not the client."""
     user = _owner(user)
     now = rules.now_local()
     try:
         row = rules.log_manual(db, user, body.prayer, now)
     except rules.NotYet:
         raise _fail(409, "not_yet", f"ยังไม่เข้าเวลา{rules.LABELS[body.prayer]}") from None
-    return _out(row, len(rules.logs_for_day(db, user.id, now.date())))
+    except rules.Closed:
+        raise _fail(409, "closed", f"หมดเวลา{rules.LABELS[body.prayer]}แล้ว หรือยังไม่ถึงเวลาที่บันทึกได้") from None
+    return _out(row, len(rules.logs_for_day(db, user.id, row.date)))
 
 
 @router.get("/api/prayer-log/week")
@@ -70,7 +72,8 @@ def week_for(db: Session, user: User, start: date, now) -> dict:
     """Weekly grid incl. which slots were missed; shared with the profile page."""
     missed_today = [p for p, s in rules.day_states(db, user, now).items() if s["state"] == "missed"]
     return rules.week_summary(db, user.id, start, now.date(),
-                              missed_today=missed_today, since=rules._tracking_since(user))
+                              missed_today=missed_today, since=rules._tracking_since(user),
+                              window=rules.open_window(user.city, now))
 
 
 @router.get("/api/prayer-log/alerts")

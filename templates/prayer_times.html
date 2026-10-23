@@ -29,8 +29,8 @@
       <div class="prayer-list__row {% if item.key == prayer.current %}is-now{% endif %} {% if row and not row.started %}is-locked{% endif %} {% if row and row.state %}is-{{ row.state|replace('_', '-') }}{% endif %}" data-prayer-key="{{ item.key }}">
         <span class="prayer-list__name">
           {% if row %}
-          {# Prayer log circle — status only: ticked by a mosque check-in. (Rows made by the old
-             listen-to-the-Quran tick keep their book icon.) #}
+          {# Prayer log circle — status only: ticked on the /profile grid or by a mosque check-in.
+             (Rows made by the old listen-to-the-Quran tick keep their book icon.) #}
           {% set entry = row.log %}
           <span class="pl-dot {% if entry %}is-{{ entry.status|replace('_', '-') }}{% if entry.source in ('checkin', 'quran') %} is-{{ entry.source }}{% endif %}{% endif %}"
                 data-prayer="{{ item.key|lower }}" data-starts="{{ row.starts_ms }}" role="img"

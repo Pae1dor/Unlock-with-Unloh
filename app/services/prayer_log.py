@@ -119,13 +119,47 @@ class NotYet(Exception):
     """The prayer's time has not begun yet."""
 
 
-def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog:
-    """Mark today's `prayer` as prayed. Tapping again returns the existing record."""
-    now = now.astimezone(ZoneInfo(TIMEZONE))   # "today" is the Bangkok calendar day
+class Closed(Exception):
+    """The prayer's on-time window is over (or it is another prayer's turn)."""
+
+
+def open_window(city: str, now: datetime) -> tuple[date, str] | None:
+    """(day, prayer) whose on-time window contains `now`, or None (e.g. sunrise -> Dhuhr).
+
+    Before today's Fajr it is still the previous day's Isha.
+    """
     day = now.date()
-    starts = start_times(user.city, day)
-    if starts is not None and now < starts[prayer]:
-        raise NotYet()
+    starts = start_times(city, day)
+    if starts is None:
+        return None
+    if now < starts["fajr"]:
+        return day - timedelta(days=1), "isha"
+    for prayer in reversed(PRAYER_KEYS):
+        if now >= starts[prayer]:
+            end = end_time(city, day, prayer)
+            if end is not None and now >= end:
+                return None
+            return day, prayer
+    return None
+
+
+def log_manual(db: Session, user: User, prayer: str, now: datetime) -> PrayerLog:
+    """Mark `prayer` as prayed, only while its on-time window is open (Isha's runs past
+    midnight until Fajr, so then it is logged on the previous day). Tapping again returns
+    the existing record."""
+    now = now.astimezone(ZoneInfo(TIMEZONE))   # "today" is the Bangkok calendar day
+    starts = start_times(user.city, now.date())
+    if starts is None:
+        # times unavailable (unknown city and Aladhan down): don't refuse on a guess
+        day = now.date()
+    else:
+        window = open_window(user.city, now)
+        if window is not None and window[1] == prayer:
+            day = window[0]
+        elif now < starts[prayer]:
+            raise NotYet()
+        else:
+            raise Closed()
 
     existing = logs_for_day(db, user.id, day).get(prayer)
     if existing is not None:
@@ -308,8 +342,13 @@ def _short_date(d: date) -> str:
 
 
 def week_summary(db: Session, user_id: int, start: date, today: date,
-                 missed_today: list[str] | None = None, since: date | None = None) -> dict:
-    """Grid data for the profile card: 7 days (Mon-Sun) x 5 prayers, plus totals."""
+                 missed_today: list[str] | None = None, since: date | None = None,
+                 window: tuple[date, str] | None = None) -> dict:
+    """Grid data for the profile card: 7 days (Mon-Sun) x 5 prayers, plus totals.
+
+    `window` is open_window(): that day's prayer, if not logged yet, comes back in the
+    day's "open" list (it can be ticked now) and is never in its "missed" list.
+    """
     start = week_start(start)
     current = week_start(today)
     if start > current:
@@ -354,7 +393,10 @@ def week_summary(db: Session, user_id: int, start: date, today: date,
             missed = [p for p in (missed_today or []) if cells[p] is None]
         else:
             missed = []
+        opened = [window[1]] if window is not None and window[0] == d and cells[window[1]] is None else []
+        missed = [p for p in missed if p not in opened]
         days.append({
+            "open": opened,
             "missed": missed,
             "date": d.isoformat(),
             "weekday": THAI_WEEKDAYS_SHORT[i],
