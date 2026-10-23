@@ -90,6 +90,23 @@
   </a>
 </div>
 
+{# App theme: three colour pairs. static/js/theme.js switches at once and keeps the choice in a cookie. #}
+<div class="section">
+  <div class="card">
+    <h2 class="card__title">ธีมของแอป</h2>
+    <div class="theme-picker" role="radiogroup" aria-label="ธีมของแอป">
+      {% set current = theme_of(request) %}
+      {% for key, label in [('gold', 'ขาว-ทอง'), ('green', 'ขาว-เขียว'), ('dark', 'ดำ-เขียว')] %}
+      <button type="button" class="theme-opt" role="radio" data-theme-pick="{{ key }}"
+              aria-checked="{{ 'true' if current == key else 'false' }}">
+        <span class="theme-sw theme-sw--{{ key }}" aria-hidden="true"></span>
+        <span>{{ label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
 <div class="section">
   <div class="card">
     <h2 class="card__title">แก้ไขข้อมูลส่วนตัว</h2>
@@ -133,4 +150,5 @@
 
 {% block scripts %}
 <script src="{{ static_url('js/prayer-week.js') }}"></script>
+<script src="{{ static_url('js/theme.js') }}"></script>
 {% endblock %}
